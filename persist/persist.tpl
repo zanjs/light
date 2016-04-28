@@ -3,10 +3,7 @@
 package {{.Package}}
 
 import (
-	// import sql driver
-	"github.com/wothing/log"
-
-	{{range .Imports}}
+	{{- range .Imports}}
 	{{.}}{{- end }}
 )
 
@@ -16,7 +13,8 @@ type {{ .Name }} struct{}
 
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) ({{range $i,$param := .Returns}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) {
 	q := `{{ .Prefix }}`
-{{if .Type | eq "add" }}
+
+{{- if .Type | eq "add" }}
 	{{ $Result := .Result}}
 	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$Result}}.{{ $r}}{{ end }})
 	if err != nil {

@@ -3,6 +3,7 @@ package persist
 import (
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -12,7 +13,8 @@ func prepare(itf *Interface) (impl *Implement) {
 	impl.Source = os.Getenv("GOFILE")
 	impl.Package = os.Getenv("GOPACKAGE")
 
-	impl.Imports = itf.Imports
+	impl.Imports = append(itf.Imports, `"github.com/gotips/log"`)
+	sort.Strings(impl.Imports)
 
 	impl.Name = itf.Name
 	if strings.HasSuffix(impl.Name, "Persister") {
