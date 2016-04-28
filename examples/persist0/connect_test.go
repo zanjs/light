@@ -1,4 +1,4 @@
-package persis
+package persist0
 
 import "testing"
 

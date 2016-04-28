@@ -1,4 +1,4 @@
-package persist
+package persist0
 
 import (
 	"github.com/gotips/seed/gobatis"

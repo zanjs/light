@@ -1,7 +1,9 @@
-package persis
+package persist0
 
 import (
 	// import sql driver
+	"fmt"
+
 	_ "github.com/lib/pq"
 	"github.com/wothing/log"
 )

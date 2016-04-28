@@ -14,10 +14,13 @@ var re = regexp.MustCompile(`\$\{.+?}`)
 func Main() {
 	gofile := os.Getenv("GOFILE")
 
-	meta := parse(gofile)
-	meta.Explain()
+	meta, err := parseFile(gofile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// js, _ := json.MarshalIndent(meta, "", "    ")
+	data := prepare(meta)
+	// js, _ := json.MarshalIndent(data, "", "    ")
 	// fmt.Printf("%s\n", js)
 
 	persist, err := ioutil.ReadFile("../../persist/persist.tpl")
@@ -25,13 +28,13 @@ func Main() {
 		log.Error(err)
 	}
 
-	filename := gofile[:len(gofile)-3] + "data.go"
+	filename := gofile[:len(gofile)-3] + "impl.go"
 	out, err := os.Create(filename)
 	if err != nil {
 		log.Error(err)
 	}
-	t := template.Must(template.New("demo").Parse(string(persist)))
-	err = t.Execute(out, meta)
+	t := template.Must(template.New("persist").Parse(string(persist)))
+	err = t.Execute(out, data)
 	if err != nil {
 		log.Error(err)
 	}

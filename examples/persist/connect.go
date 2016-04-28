@@ -8,7 +8,7 @@ import (
 	"github.com/wothing/log"
 )
 
-const url = "postgres://postgres:@127.0.0.1:5432/test?sslmode=disable"
+const url = "postgres://postgres:@127.0.0.1:5432/meidb?sslmode=disable"
 
 var db *sql.DB
 

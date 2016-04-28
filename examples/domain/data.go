@@ -6,3 +6,8 @@ type Demo struct {
 	DemoName   string
 	DemoStatus string
 }
+
+// create table demos (
+//     id uuid primary key default gen_random_uuid(),
+// demo_name text,
+// demo_status text);
