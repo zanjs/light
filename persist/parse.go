@@ -93,25 +93,31 @@ func parseMethods(interfaceType *ast.InterfaceType, i *Interface) {
 }
 
 func parseFuncType(funcType *ast.FuncType, i *Func) {
-	for _, p := range funcType.Params.List {
-		var param Param
-		i.Params = append(i.Params, &param)
-
-		parseField(p, &param)
+	for _, field := range funcType.Params.List {
+		i.Params = append(i.Params, parseField(field)...)
 	}
 
-	for _, p := range funcType.Results.List {
-		var param Param
-		i.Returns = append(i.Returns, &param)
-
-		parseField(p, &param)
+	for _, field := range funcType.Results.List {
+		i.Returns = append(i.Returns, parseField(field)...)
 	}
 }
 
-func parseField(field *ast.Field, param *Param) {
-	param.Name = field.Names[0].Name
+func parseField(field *ast.Field) (rets []*Param) {
 
-	param.Type = parseExpr(field.Type)
+	for _, name := range field.Names {
+		rets = append(rets, &Param{
+			Name: name.Name,
+			Type: parseExpr(field.Type),
+		})
+	}
+	if len(field.Names) == 0 {
+		rets = append(rets, &Param{
+			Name: "",
+			Type: parseExpr(field.Type),
+		})
+	}
+
+	return rets
 }
 
 func parseExpr(expr ast.Expr) (x string) {

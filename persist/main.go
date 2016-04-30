@@ -1,6 +1,8 @@
 package persist
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -20,8 +22,8 @@ func Main() {
 	}
 
 	data := prepare(meta)
-	// js, _ := json.MarshalIndent(data, "", "    ")
-	// fmt.Printf("%s\n", js)
+	js, _ := json.MarshalIndent(data, "", "    ")
+	fmt.Printf("%s\n", js)
 
 	persist, err := ioutil.ReadFile("../../persist/persist.tpl")
 	if err != nil {

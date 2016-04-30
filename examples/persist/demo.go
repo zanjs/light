@@ -21,7 +21,7 @@ type DemoPersister interface {
 
 	// select id, demo_name, demo_status
 	// from demos
-	// where id<${id} and demo_name!=${d.DemoName} and demo_status='1'
+	// where id<${d.Id} and demo_name!=${d.DemoName} and demo_status='1'
 	List(d *m.Demo) (ds []*m.Demo, err error)
 
 	// delete from demos where id=${id}

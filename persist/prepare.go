@@ -43,7 +43,11 @@ func prepareMethod(m *Method, f *Func) {
 
 	calcResult(m, f)
 
-	parseSQL(m, sql)
+	calcScans(m, sql)
+
+	calcArgs(m, sql)
+
+	calcMarshals(m)
 }
 
 func calcResult(m *Method, f *Func) {
@@ -81,7 +85,7 @@ func getMethodType(sql string, f *Func) MethodType {
 	}
 }
 
-func parseSQL(m *Method, sql string) {
+func calcArgs(m *Method, sql string) {
 	re := regexp.MustCompile(`\$\{(.+?)\}`)
 	matched := re.FindAllStringSubmatchIndex(sql, -1)
 
@@ -89,8 +93,6 @@ func parseSQL(m *Method, sql string) {
 		m.Prefix = sql
 		return
 	}
-
-	parseScans(m, sql)
 
 	// i.e.
 	// select id, demo_name, demo_status
@@ -113,7 +115,7 @@ func parseSQL(m *Method, sql string) {
 	m.Prefix += sql[matched[len(matched)-1][1]:]
 }
 
-func parseScans(m *Method, sql string) {
+func calcScans(m *Method, sql string) {
 	var start, end int
 	switch m.Type {
 	case MethodTypeGet, MethodTypeList, MethodTypePage:
@@ -141,5 +143,18 @@ func parseScans(m *Method, sql string) {
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
 		m.Scans = append(m.Scans, f)
+	}
+}
+
+func calcMarshals(m *Method) {
+	for i, arg := range m.Args {
+		pieces := strings.Split(arg, "|")
+		if len(pieces) == 2 {
+			switch pieces[1] {
+			case "json":
+				m.Args[i] = "_" + pieces[0]
+				m.Marshals = append(m.Marshals, pieces[0])
+			}
+		}
 	}
 }
