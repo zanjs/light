@@ -4,7 +4,6 @@ package {{.Package}}
 
 import (
 	"encoding/json"
-
 	"github.com/gotips/log"
 	{{- range .Imports}}
 	{{.}}{{- end }}
@@ -19,68 +18,67 @@ type {{ .Name }} struct{}
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) ({{range $i,$param := .Returns}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) {
 	q := `{{ .Prefix }}`
 
-		{{ $in := .In}}
-		{{range .Marshals}}
-		{{$in}}_{{.}}, err := json.Marshal({{$in}}.{{.}})
-		if err != nil {
-			log.Errorf("marshal(%s) error: %s",{{$in}}.{{.}}, err)
-		}
-		{{end}}
+{{ $in := .In}}
+{{range .Marshals}}
+	{{$in}}_{{.}}, err := json.Marshal({{$in}}.{{.}})
+	if err != nil {
+		log.Errorf("marshal(%s) error: %s",{{$in}}.{{.}}, err)
+	}
+{{end}}
+	args := []interface{}{ {{range $i, $arg := .Args}}{{ if ne $i 0 }}, {{end}}{{$arg}}{{ end }} }
 
 {{- if .Type | eq "add" }}
 	x := {{ .Result}}
-	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{ $r}}{{ end }})
+	dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan}}{{end}} }
+	err = db.QueryRow(q, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("insert(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("insert(%s, %#v) error: %s", q, args, err)
 		return err
 	}
 	return nil
 
 {{- else if .Type | eq "modify"}}
-	res, err := db.Exec(q{{range .Args}}, {{.}}{{ end }})
+	res, err := db.Exec(q, args...)
 	if err != nil {
-		log.Errorf("update(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("update(%s, %#v) error: %s", q, args, err)
 		return err
 	}
 	a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("update(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("update(%s, %#v) error: %s", q, args, err)
 		return err
 	} else if a != 1 {
-		log.Errorf("update(%s{{range .Args}}, %s{{ end }}) expected affected 1 row, but actual affected %d rows",
-			q{{range .Args}}, {{.}}{{ end }}, a)
+		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
+			q, args, a)
 		return err
 	}
 	return nil
 
 {{- else if .Type | eq "remove"}}
-	res, err := db.Exec(q{{range .Args}}, {{.}}{{ end }})
+	res, err := db.Exec(q, args...)
 	if err != nil {
-		log.Errorf("delete(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("delete(%s, %#v) error: %s", q, args, err)
 		return err
 	}
 	a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("delete(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("delete(%s, %#v) error: %s", q, args, err)
 		return err
 	} else if a != 1 {
-		log.Errorf("delete(%s{{range .Args}}, %s{{ end }}) expected affected 1 row, but actual affected %d rows",
-			q{{range .Args}}, {{.}}{{ end }}, a)
+		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
+			q, args, a)
 		return err
 	}
 	return nil
 
 {{- else if .Type | eq "get"}}
-	{{ $Result := .Result}}
 	x := &{{.ResultType}}{}
+    var {{range $i, $scan := .Unmarshals}}{{if ne $i 0}}, {{end}}x_{{$scan}}{{end}} []byte
+    dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan}}{{end}} }
 
-			   {{range .Unmarshals}}
-			   var x_{{.}} []byte
-			   {{end}}
-	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).
-		Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$r}}{{ end }})
+	err = db.QueryRow(q, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("query(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("query(%s, %#v) error: %s", q, args, err)
 		return nil, err
 	}
 		{{$returnType := .ResultType}}
@@ -94,9 +92,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	return x, nil
 
 {{- else if .Type | eq "list"}}
-	rows, err := db.Query(q{{range .Args}}, {{.}}{{ end }})
+	rows, err := db.Query(q, args...)
 	if err != nil {
-		log.Errorf("query(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("query(%s, %#v) error: %s", q, args, err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -105,13 +103,12 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 		var x {{.ResultType}}
 		{{.Result}} = append({{.Result}}, &x)
 
+		var {{range $i, $scan := .Unmarshals}}{{if ne $i 0}}, {{end}}x_{{$scan}}{{end}} []byte
+		dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan}}{{end}} }
 
-					   {{range .Unmarshals}}
-					   var x_{{.}} []byte
-					   {{end}}
-		err = rows.Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$r}}{{ end }})
+		err = rows.Scan(dest...)
 		if err != nil {
-			log.Errorf("scan rows for query(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+			log.Errorf("scan rows for query(%s, %#v) error: %s", q, args, err)
 			return nil, err
 		}
 
@@ -127,7 +124,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 
 	}
 	if err = rows.Err(); err != nil {
-		log.Errorf("scan rows for query(%s{{range .Args}}, %s{{ end }}) last error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
+		log.Errorf("scan rows for query(%s, %#v) last error: %s", q, args, err)
 		return nil, err
 	}
 	return {{.Result}}, nil
