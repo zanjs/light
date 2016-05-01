@@ -1,14 +1,14 @@
 package persist
 
 import (
-	"encoding/json"
-	"fmt"
+	"bytes"
+	"go/format"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"text/template"
 
-	"github.com/wothing/log"
+	"github.com/gotips/log"
 )
 
 var re = regexp.MustCompile(`\$\{.+?}`)
@@ -20,24 +20,33 @@ func Main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// mjs, _ := json.MarshalIndent(meta, "", "    ")
+	// fmt.Printf("%s\n", mjs)
 
 	data := prepare(meta)
-	js, _ := json.MarshalIndent(data, "", "    ")
-	fmt.Printf("%s\n", js)
+	// js, _ := json.MarshalIndent(data, "", "    ")
+	// fmt.Printf("%s\n", js)
 
-	persist, err := ioutil.ReadFile("../../persist/persist.tpl")
+	tplFile := "../../persist/persist.tpl"
+	t, err := template.ParseFiles(tplFile)
 	if err != nil {
 		log.Error(err)
+	}
+	var buf bytes.Buffer
+	err = t.Execute(&buf, data)
+	if err != nil {
+		log.Error(err)
+	}
+
+	pretty, err := format.Source(buf.Bytes())
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
-	out, err := os.Create(filename)
+
+	ioutil.WriteFile(filename, pretty, 0644)
 	if err != nil {
-		log.Error(err)
-	}
-	t := template.Must(template.New("persist").Parse(string(persist)))
-	err = t.Execute(out, data)
-	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 }

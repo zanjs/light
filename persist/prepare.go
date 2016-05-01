@@ -3,7 +3,6 @@ package persist
 import (
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -13,8 +12,7 @@ func prepare(itf *Interface) (impl *Implement) {
 	impl.Source = os.Getenv("GOFILE")
 	impl.Package = os.Getenv("GOPACKAGE")
 
-	impl.Imports = append(itf.Imports, `"github.com/gotips/log"`)
-	sort.Strings(impl.Imports)
+	impl.Imports = itf.Imports
 
 	impl.Name = itf.Name
 	if strings.HasSuffix(impl.Name, "Persister") {
@@ -41,23 +39,29 @@ func prepareMethod(m *Method, f *Func) {
 	sql := strings.Trim(f.Doc, " \t")
 	m.Type = getMethodType(sql, f)
 
-	calcResult(m, f)
-
-	calcScans(m, sql)
+	calcInResult(m, f)
 
 	calcArgs(m, sql)
 
 	calcMarshals(m)
+
+	calcScans(m, sql)
+
+	calcUnmarshals(m)
 }
 
-func calcResult(m *Method, f *Func) {
+func calcInResult(m *Method, f *Func) {
 	if m.Type == MethodTypeGet {
+		m.In = f.Params[0].Name
 		m.Result, m.ResultType = f.Returns[0].Name, f.Returns[0].Type[1:]
 	} else if m.Type == MethodTypeList {
+		m.In = f.Params[0].Name
 		m.Result, m.ResultType = f.Returns[0].Name, f.Returns[0].Type[3:]
 	} else if m.Type == MethodTypePage {
+		m.In = f.Params[0].Name
 		m.Result, m.ResultType = f.Returns[1].Name, f.Returns[1].Type[3:]
 	} else {
+		m.In = f.Params[0].Name
 		m.Result, m.ResultType = f.Params[0].Name, f.Params[0].Type[1:]
 	}
 }
@@ -142,18 +146,44 @@ func calcScans(m *Method, sql string) {
 		f = strings.Replace(f, "_", " ", -1)
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
-		m.Scans = append(m.Scans, f)
+		m.Scans = append(m.Scans, "x."+f)
 	}
 }
 
 func calcMarshals(m *Method) {
-	for i, arg := range m.Args {
-		pieces := strings.Split(arg, "|")
-		if len(pieces) == 2 {
-			switch pieces[1] {
-			case "json":
-				m.Args[i] = "_" + pieces[0]
-				m.Marshals = append(m.Marshals, pieces[0])
+	for _, p := range m.Params {
+		for _, prop := range p.Props {
+			switch prop.Type {
+			case "int", "int64", "int32", "int16", "int8":
+			case "uint", "uint64", "uint32", "uin16", "uint8", "byte":
+			case "string":
+			default:
+				for i, arg := range m.Args {
+					// TODO must not use m.Result
+					if arg == m.In+"."+prop.Name {
+						m.Args[i] = m.In + "_" + prop.Name
+						m.Marshals = append(m.Marshals, prop.Name)
+					}
+				}
+			}
+		}
+	}
+}
+
+func calcUnmarshals(m *Method) {
+	for _, p := range m.Returns {
+		for _, prop := range p.Props {
+			switch prop.Type {
+			case "int", "int64", "int32", "int16", "int8":
+			case "uint", "uint64", "uint32", "uin16", "uint8", "byte":
+			case "string":
+			default:
+				for i, scan := range m.Scans {
+					if scan == "x."+prop.Name {
+						m.Scans[i] = "x_" + prop.Name
+						m.Unmarshals = append(m.Unmarshals, prop.Name)
+					}
+				}
 			}
 		}
 	}

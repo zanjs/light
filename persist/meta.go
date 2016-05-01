@@ -14,6 +14,7 @@ type Func struct {
 }
 
 type Param struct {
-	Name string
-	Type string
+	Name  string
+	Type  string
+	Props []*Param
 }

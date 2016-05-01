@@ -3,9 +3,14 @@
 package {{.Package}}
 
 import (
+	"encoding/json"
+
+	"github.com/gotips/log"
 	{{- range .Imports}}
 	{{.}}{{- end }}
 )
+
+var _ = json.Marshal
 
 type {{ .Name }} struct{}
 
@@ -14,9 +19,17 @@ type {{ .Name }} struct{}
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) ({{range $i,$param := .Returns}}{{if $i | ne 0}}, {{end}}{{$param.Name}} {{$param.Type}}{{ end }}) {
 	q := `{{ .Prefix }}`
 
+		{{ $in := .In}}
+		{{range .Marshals}}
+		{{$in}}_{{.}}, err := json.Marshal({{$in}}.{{.}})
+		if err != nil {
+			log.Errorf("marshal(%s) error: %s",{{$in}}.{{.}}, err)
+		}
+		{{end}}
+
 {{- if .Type | eq "add" }}
-	{{ $Result := .Result}}
-	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$Result}}.{{ $r}}{{ end }})
+	x := {{ .Result}}
+	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{ $r}}{{ end }})
 	if err != nil {
 		log.Errorf("insert(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
 		return err
@@ -59,14 +72,26 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 
 {{- else if .Type | eq "get"}}
 	{{ $Result := .Result}}
-	{{.Result}} = &{{.ResultType}}{}
+	x := &{{.ResultType}}{}
+
+			   {{range .Unmarshals}}
+			   var x_{{.}} []byte
+			   {{end}}
 	err = db.QueryRow(q{{range .Args}}, {{.}}{{ end }}).
-		Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$Result}}.{{$r}}{{ end }})
+		Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$r}}{{ end }})
 	if err != nil {
 		log.Errorf("query(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
 		return nil, err
 	}
-	return {{.Result}}, nil
+		{{$returnType := .ResultType}}
+		   {{range .Unmarshals}}
+		   x.{{.}} = &{{$returnType}}{}
+		 	err = json.Unmarshal(x_{{.}}, x.{{.}})
+		   if err != nil {
+			   log.Errorf("unmarshal(%s) error: %s",x_{{.}}, err)
+		   }
+		   {{end}}
+	return x, nil
 
 {{- else if .Type | eq "list"}}
 	rows, err := db.Query(q{{range .Args}}, {{.}}{{ end }})
@@ -78,12 +103,25 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 
 	for rows.Next() {
 		var x {{.ResultType}}
-		err = rows.Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&x.{{$r}}{{ end }})
+		{{.Result}} = append({{.Result}}, &x)
+
+
+					   {{range .Unmarshals}}
+					   var x_{{.}} []byte
+					   {{end}}
+		err = rows.Scan({{range $i, $r := .Scans}}{{ if ne $i 0 }}, {{end}}&{{$r}}{{ end }})
 		if err != nil {
 			log.Errorf("scan rows for query(%s{{range .Args}}, %s{{ end }}) error: %s", q{{range .Args}}, {{.}}{{ end }}, err)
 			return nil, err
 		}
-		{{.Result}} = append({{.Result}}, &x)
+
+		{{ $out := .Result}}
+	   {{range .Unmarshals}}
+	 	err = json.Unmarshal({{$in}}_{{.}}, {{$in}}.{{.}})
+	   if err != nil {
+		   log.Errorf("unmarshal(%s) error: %s",{{$in}}_{{.}}, err)
+	   }
+	   {{end}}
 	}
 	if err = rows.Err(); err != nil {
 		log.Errorf("scan rows for query(%s{{range .Args}}, %s{{ end }}) last error: %s", q{{range .Args}}, {{.}}{{ end }}, err)

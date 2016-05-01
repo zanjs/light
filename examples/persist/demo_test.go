@@ -1,8 +1,6 @@
 package persist
 
 import (
-	"fmt"
-	"math/rand"
 	"testing"
 
 	m "github.com/arstd/persist/examples/domain"
@@ -13,7 +11,12 @@ var id string
 
 func TestDemoDataAdd(t *testing.T) {
 	d := &m.Demo{
-		DemoName: fmt.Sprintf("U_%d", rand.Intn(9999)),
+		DemoName:   "demo_name",
+		DemoStatus: "demo_status",
+		DemoStruct: &m.Demo{
+			DemoName:   "demo_name",
+			DemoStatus: "demo_status",
+		},
 	}
 
 	err := x.Add(d)
@@ -26,8 +29,13 @@ func TestDemoDataAdd(t *testing.T) {
 
 func TestDemoDataUpdate(t *testing.T) {
 	d := &m.Demo{
-		Id:       id,
-		DemoName: fmt.Sprintf("Ux_%d", rand.Intn(9999)),
+		Id:         id,
+		DemoName:   "demo_name",
+		DemoStatus: "demo_status",
+		DemoStruct: &m.Demo{
+			DemoName:   "demo_name",
+			DemoStatus: "demo_status",
+		},
 	}
 
 	err := x.Update(d)
@@ -36,10 +44,25 @@ func TestDemoDataUpdate(t *testing.T) {
 	}
 }
 
+func TestDemoGet(t *testing.T) {
+	d, err := x.Get(id)
+
+	if err != nil {
+		t.Fatalf("get(%+v) error: %s", d, err)
+	}
+
+	t.Logf("%v", d)
+}
+
 func TestDemoDataList(t *testing.T) {
 	d := &m.Demo{
-		Id:       id,
-		DemoName: fmt.Sprintf("Ux_%d", rand.Intn(9999)),
+		Id:         id,
+		DemoName:   "demo_name",
+		DemoStatus: "demo_status",
+		DemoStruct: &m.Demo{
+			DemoName:   "demo_name",
+			DemoStatus: "demo_status",
+		},
 	}
 	mts, err := x.List(d)
 

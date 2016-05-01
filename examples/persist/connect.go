@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	// import sql driver
+	"github.com/gotips/log"
 	_ "github.com/lib/pq"
-	"github.com/wothing/log"
 )
 
 const url = "postgres://postgres:@127.0.0.1:5432/meidb?sslmode=disable"

@@ -23,9 +23,11 @@ const (
 type Method struct {
 	Type MethodType
 
-	Name       string
-	Params     []*Param
-	Returns    []*Param
+	Name    string
+	Params  []*Param
+	Returns []*Param
+
+	In         string
 	Result     string
 	ResultType string
 
