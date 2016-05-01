@@ -84,11 +84,11 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 		return nil, err
 	}
 		{{$returnType := .ResultType}}
-		   {{range .Unmarshals}}
-		   x.{{.}} = &{{$returnType}}{}
-		 	err = json.Unmarshal(x_{{.}}, x.{{.}})
+		   {{range .Unmarshals1}}
+		   x.{{.Name}} = &{{.Type}}{}
+		 	err = json.Unmarshal(x_{{.Name}}, x.{{.Name}})
 		   if err != nil {
-			   log.Errorf("unmarshal(%s) error: %s",x_{{.}}, err)
+			   log.Errorf("unmarshal(%s) error: %s",x_{{.Name}}, err)
 		   }
 		   {{end}}
 	return x, nil

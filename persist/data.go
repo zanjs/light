@@ -38,8 +38,9 @@ type Method struct {
 	Args     []string
 	Marshals []string
 
-	Scans      []string
-	Unmarshals []string
+	Scans       []string
+	Unmarshals  []string
+	Unmarshals1 []*Param
 }
 
 type Optional struct {
