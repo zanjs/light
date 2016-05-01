@@ -41,7 +41,7 @@ func prepareMethod(m *Method, f *Func) {
 
 	calcInResult(m, f)
 
-	calcArgs(m, sql)
+	calcFragment(m, sql)
 
 	calcMarshals(m)
 
@@ -89,34 +89,79 @@ func getMethodType(sql string, f *Func) MethodType {
 	}
 }
 
-func calcArgs(m *Method, sql string) {
-	re := regexp.MustCompile(`\$\{(.+?)\}`)
-	matched := re.FindAllStringSubmatchIndex(sql, -1)
+var fregmentRegexp = regexp.MustCompile(`\[\?\((.+?)\)(.+?)\]`)
+
+func calcFragment(m *Method, sql string) {
+	matched := fregmentRegexp.FindAllStringSubmatchIndex(sql, -1)
+
+	dollar := new(int)
 
 	if len(matched) == 0 {
-		m.Prefix = sql
+		m.Fragments = append(m.Fragments, getFragment(sql, "", dollar))
 		return
+	}
+
+	before := 0
+	for _, group := range matched {
+		if before != group[0] {
+			m.Fragments = append(m.Fragments, getFragment(sql[before:group[0]], "", dollar))
+		}
+		m.Fragments = append(m.Fragments,
+			getFragment(sql[group[4]:group[5]], sql[group[2]:group[3]], dollar))
+
+		before = group[1]
+	}
+
+	if before != len(sql) {
+		m.Fragments = append(m.Fragments, getFragment(sql[before:], "", dollar))
+	}
+}
+
+var placeholderRegexp = regexp.MustCompile(`\$\{(.+?)\}`)
+
+func getFragment(sql string, cond string, dollar *int) (fm *Fragment) {
+	fm = &Fragment{Cond: cond}
+	matched := placeholderRegexp.FindAllStringSubmatchIndex(sql, -1)
+	if len(matched) == 0 {
+		fm.Stmt = sql
+		return fm
 	}
 
 	// i.e.
 	// select id, demo_name, demo_status
 	// from demos
 	// where id < ${id} and demo_name=${d.demeName} and demo_status=1
-	var from int
-	for i, group := range matched {
+	var before int
+	for _, group := range matched {
 		//= select ... from demos where id <
-		m.Prefix += sql[from:group[0]]
+		fm.Stmt += sql[before:group[0]]
 
 		//= select ... from demos where id < $1
-		m.Prefix += "$" + strconv.Itoa(i+1)
+		*dollar++
+		fm.Stmt += "$" + strconv.Itoa(*dollar)
 
-		m.Args = append(m.Args, sql[group[2]:group[3]])
+		fm.Args = append(fm.Args, getVarAndType(sql[group[2]:group[3]]))
 
-		from = group[1]
+		before = group[1]
 	}
 
 	//= select ... from demos where id < $1 ... and demo_status=1
-	m.Prefix += sql[matched[len(matched)-1][1]:]
+	fm.Stmt += sql[before:]
+
+	return fm
+}
+
+func getVarAndType(v string) (t *VarAndType) {
+	t = &VarAndType{Var: v}
+
+	// TODO
+	// Var string
+	//
+	// Type    string
+	// Slice   string
+	// Star    string
+	// Package string
+	return t
 }
 
 func calcScans(m *Method, sql string) {
@@ -158,11 +203,12 @@ func calcMarshals(m *Method) {
 			case "uint", "uint64", "uint32", "uin16", "uint8", "byte":
 			case "string":
 			default:
-				for i, arg := range m.Args {
-					// TODO must not use m.Result
-					if arg == m.In+"."+prop.Name {
-						m.Args[i] = m.In + "_" + prop.Name
-						m.Marshals = append(m.Marshals, prop.Name)
+				for _, fm := range m.Fragments {
+					for i, arg := range fm.Args {
+						if arg.Var == m.In+"."+prop.Name {
+							fm.Args[i].Var = m.In + "_" + prop.Name
+							m.Marshals = append(m.Marshals, prop.Name)
+						}
 					}
 				}
 			}
@@ -182,7 +228,15 @@ func calcUnmarshals(m *Method) {
 					if scan == "x."+prop.Name {
 						m.Scans[i] = "x_" + prop.Name
 						m.Unmarshals = append(m.Unmarshals, prop.Name)
-						prop.Type = "&" + prop.Type[1:]
+						switch prop.Type[0] {
+						case 'm':
+						case '*':
+							prop.Type = "&" + prop.Type[1:]
+						case '[':
+							prop.Type = "[]*" + m.ResultType[:strings.Index(m.ResultType, ".")+1] + prop.Type[3:]
+						default:
+							prop.Type = "&" + m.ResultType[:strings.Index(m.ResultType, ".")+1] + prop.Type
+						}
 						m.Unmarshals1 = append(m.Unmarshals1, prop)
 					}
 				}

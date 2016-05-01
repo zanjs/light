@@ -283,8 +283,12 @@ func parseExpr(expr ast.Expr, i ...*Interface) (x string) {
 		arrayType := expr.(*ast.ArrayType)
 		return "[]" + parseExpr(arrayType.Elt)
 
+	case *ast.MapType:
+		return "map[string]string"
+
 	default:
-		panic("not implemented")
+		log.Fatalf("%#v", expr)
+		return
 	}
 }
 

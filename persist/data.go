@@ -31,20 +31,29 @@ type Method struct {
 	Result     string
 	ResultType string
 
-	Prefix    string
-	Optionals []*Optional
-	Suffix    string
-
+	Prefix   string
+	Suffix   string
 	Args     []string
 	Marshals []string
+
+	Fragments []*Fragment
 
 	Scans       []string
 	Unmarshals  []string
 	Unmarshals1 []*Param
 }
 
-type Optional struct {
-	Condition string
-	Field     string
-	Stmt      string
+type Fragment struct {
+	Cond string // if xxx != yyy
+	Args []*VarAndType
+	Stmt string
+}
+
+type VarAndType struct {
+	Var string
+
+	Type    string
+	Slice   string
+	Star    string
+	Package string
 }
