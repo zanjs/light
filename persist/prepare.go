@@ -182,6 +182,7 @@ func calcUnmarshals(m *Method) {
 					if scan == "x."+prop.Name {
 						m.Scans[i] = "x_" + prop.Name
 						m.Unmarshals = append(m.Unmarshals, prop.Name)
+						prop.Type = "&" + prop.Type[1:]
 						m.Unmarshals1 = append(m.Unmarshals1, prop)
 					}
 				}

@@ -1,11 +1,13 @@
 package domain
 
+import "bytes"
+
 // Demo xxx
 type Demo struct {
 	Id         string
 	DemoName   string
 	DemoStatus string
-	DemoStruct *Demo
+	DemoStruct *bytes.Buffer
 }
 
 //

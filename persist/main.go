@@ -21,11 +21,11 @@ func Main() {
 		log.Fatal(err)
 	}
 	// mjs, _ := json.MarshalIndent(meta, "", "    ")
-	// fmt.Printf("%s\n", mjs)
+	// log.Debugf("%s\n", mjs)
 
 	data := prepare(meta)
 	// js, _ := json.MarshalIndent(data, "", "    ")
-	// fmt.Printf("%s\n", js)
+	// log.Debugf("%s\n", js)
 
 	tplFile := "../../persist/persist.tpl"
 	t, err := template.ParseFiles(tplFile)

@@ -1,7 +1,10 @@
 package persist
 
 import (
+	"bytes"
 	"testing"
+
+	"github.com/gotips/log"
 
 	m "github.com/arstd/persist/examples/domain"
 )
@@ -13,10 +16,7 @@ func TestDemoDataAdd(t *testing.T) {
 	d := &m.Demo{
 		DemoName:   "demo_name",
 		DemoStatus: "demo_status",
-		DemoStruct: &m.Demo{
-			DemoName:   "demo_name",
-			DemoStatus: "demo_status",
-		},
+		DemoStruct: bytes.NewBufferString("{}"),
 	}
 
 	err := x.Add(d)
@@ -32,10 +32,7 @@ func TestDemoDataUpdate(t *testing.T) {
 		Id:         id,
 		DemoName:   "demo_name",
 		DemoStatus: "demo_status",
-		DemoStruct: &m.Demo{
-			DemoName:   "demo_name",
-			DemoStatus: "demo_status",
-		},
+		DemoStruct: bytes.NewBufferString("{}"),
 	}
 
 	err := x.Update(d)
@@ -51,7 +48,8 @@ func TestDemoGet(t *testing.T) {
 		t.Fatalf("get(%+v) error: %s", d, err)
 	}
 
-	t.Logf("%v", d)
+	log.SetLevel(log.TraceLevel)
+	log.JSON(d)
 }
 
 func TestDemoDataList(t *testing.T) {
@@ -59,10 +57,7 @@ func TestDemoDataList(t *testing.T) {
 		Id:         id,
 		DemoName:   "demo_name",
 		DemoStatus: "demo_status",
-		DemoStruct: &m.Demo{
-			DemoName:   "demo_name",
-			DemoStatus: "demo_status",
-		},
+		DemoStruct: bytes.NewBufferString("{}"),
 	}
 	mts, err := x.List(d)
 
@@ -70,7 +65,7 @@ func TestDemoDataList(t *testing.T) {
 		t.Fatalf("list(%+v) error: %s", d, err)
 	}
 
-	t.Logf("%v", mts)
+	log.JSON(mts)
 }
 
 func TestDemoDataDelete(t *testing.T) {

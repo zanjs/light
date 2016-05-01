@@ -85,7 +85,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	}
 		{{$returnType := .ResultType}}
 		   {{range .Unmarshals1}}
-		   x.{{.Name}} = &{{.Type}}{}
+		   x.{{.Name}} = {{.Type}}{}
 		 	err = json.Unmarshal(x_{{.Name}}, x.{{.Name}})
 		   if err != nil {
 			   log.Errorf("unmarshal(%s) error: %s",x_{{.Name}}, err)
@@ -115,13 +115,16 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 			return nil, err
 		}
 
-		{{ $out := .Result}}
-	   {{range .Unmarshals}}
-	 	err = json.Unmarshal({{$in}}_{{.}}, {{$in}}.{{.}})
-	   if err != nil {
-		   log.Errorf("unmarshal(%s) error: %s",{{$in}}_{{.}}, err)
-	   }
-	   {{end}}
+
+	   {{$returnType := .ResultType}}
+		  {{range .Unmarshals1}}
+		  x.{{.Name}} = {{.Type}}{}
+		   err = json.Unmarshal(x_{{.Name}}, x.{{.Name}})
+		  if err != nil {
+			  log.Errorf("unmarshal(%s) error: %s",x_{{.Name}}, err)
+		  }
+		  {{end}}
+
 	}
 	if err = rows.Err(); err != nil {
 		log.Errorf("scan rows for query(%s{{range .Args}}, %s{{ end }}) last error: %s", q{{range .Args}}, {{.}}{{ end }}, err)

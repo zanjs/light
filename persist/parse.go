@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/tools/imports"
+
 	"github.com/gotips/log"
 )
 
@@ -48,21 +50,20 @@ func deepParseStruct(i *Interface) {
 	for _, fun := range i.Methods {
 		for _, p := range fun.Params {
 			if strings.Contains(p.Type, ".") {
-				parseStruct(p, i.Imports)
+				parseStruct(p, i)
 			}
 		}
 		for _, p := range fun.Returns {
 			if strings.Contains(p.Type, ".") {
-				parseStruct(p, i.Imports)
+				parseStruct(p, i)
 			}
 		}
 	}
 }
 
-// TODO
-func parseStruct(p *Param, imps []string) {
+func parseStruct(p *Param, i *Interface) {
 	// get path and type name
-	path, name := getPathAndTypeName(p, imps)
+	path, name := getPathAndTypeName(p, i.Imports)
 
 	// parse file to ast, then get type properties
 	typeSpec := getTypeSpec(path, name)
@@ -78,7 +79,7 @@ func parseStruct(p *Param, imps []string) {
 			// TODO
 			continue
 		}
-		typ := parseExpr(f.Type)
+		typ := parseExpr(f.Type, i)
 		for _, nam := range f.Names {
 			p.Props = append(p.Props, &Param{
 				Name: nam.Name,
@@ -133,7 +134,6 @@ func getTypeSpec(path, name string) (typeSpec *ast.TypeSpec) {
 		for _, decl := range f.Decls {
 			decl, ok := decl.(*ast.GenDecl)
 			if !ok || decl.Tok != token.TYPE {
-				log.Debugf("%#v", decl)
 				continue
 			}
 			for _, spec := range decl.Specs {
@@ -206,13 +206,13 @@ func parseMethods(interfaceType *ast.InterfaceType, i *Interface) {
 	}
 }
 
-func parseFuncType(funcType *ast.FuncType, i *Func) {
+func parseFuncType(funcType *ast.FuncType, f *Func) {
 	for _, field := range funcType.Params.List {
-		i.Params = append(i.Params, parseField(field)...)
+		f.Params = append(f.Params, parseField(field)...)
 	}
 
 	for _, field := range funcType.Results.List {
-		i.Returns = append(i.Returns, parseField(field)...)
+		f.Returns = append(f.Returns, parseField(field)...)
 	}
 }
 
@@ -235,7 +235,7 @@ func parseField(field *ast.Field) (rets []*Param) {
 	return rets
 }
 
-func parseExpr(expr ast.Expr) (x string) {
+func parseExpr(expr ast.Expr, i ...*Interface) (x string) {
 	switch expr.(type) {
 	case *ast.Ident:
 		ident := expr.(*ast.Ident)
@@ -243,11 +243,41 @@ func parseExpr(expr ast.Expr) (x string) {
 
 	case *ast.StarExpr:
 		starExpr := expr.(*ast.StarExpr)
-		return "*" + parseExpr(starExpr.X)
+		return "*" + parseExpr(starExpr.X, i...)
 
 	case *ast.SelectorExpr:
 		selectorExpr := expr.(*ast.SelectorExpr)
-		return parseExpr(selectorExpr.X) + "." + selectorExpr.Sel.Name
+		x = parseExpr(selectorExpr.X)
+		sel := selectorExpr.Sel.Name
+
+		if len(i) > 0 {
+			for _, i := range i[0].Imports {
+				if strings.HasSuffix(i, x+`"`) {
+					return x + "." + sel
+				}
+			}
+
+			// add import
+			// Let goimports do the heavy lifting.
+			src := []byte("package hack\n" + "var i " + x + "." + sel)
+			imp, err := imports.Process("", src, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// imp should now contain an appropriate import.
+			// Parse out the import and the identifier.
+			fset := token.NewFileSet()
+			f, err := parser.ParseFile(fset, "", imp, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(f.Imports) == 0 {
+				log.Fatal("can not find type " + x)
+			}
+			i[0].Imports = append(i[0].Imports, f.Imports[0].Path.Value)
+		}
+		return x + "." + sel
 
 	case *ast.ArrayType:
 		arrayType := expr.(*ast.ArrayType)
