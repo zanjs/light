@@ -41,7 +41,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 {{- if .Type | eq "add" }}
 	x := {{ .Result}}
 	dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan}}{{end}} }
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	err = db.DB.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", query, args, err)
 		return err
@@ -49,7 +49,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	return nil
 
 {{- else if .Type | eq "modify"}}
-	res, err := db.Exec(query.String(), args...)
+	res, err := db.DB.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("update(%s, %#v) error: %s", query, args, err)
 		return err
@@ -61,12 +61,12 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	} else if a != 1 {
 		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
 			query, args, a)
-		return err
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
 	}
 	return nil
 
 {{- else if .Type | eq "remove"}}
-	res, err := db.Exec(query.String(), args...)
+	res, err := db.DB.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("delete(%s, %#v) error: %s", query, args, err)
 		return err
@@ -78,16 +78,18 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	} else if a != 1 {
 		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
 			query, args, a)
-		return err
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
 	}
 	return nil
 
 {{- else if .Type | eq "get"}}
 	x := &{{.ResultType}}{}
+	{{if len .Unmarshals | gt 0}}
     var {{range $i, $scan := .Unmarshals}}{{if ne $i 0}}, {{end}}x_{{$scan}}{{end}} []byte
+	{{end}}
     dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan}}{{end}} }
 
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	err = db.DB.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
@@ -103,7 +105,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$param := .Params}}{{if $i | ne 0}},
 	return x, nil
 
 {{- else if .Type | eq "list"}}
-	rows, err := db.Query(query.String(), args...)
+	rows, err := db.DB.Query(query.String(), args...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err

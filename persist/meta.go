@@ -19,3 +19,12 @@ type Param struct {
 	Type    string
 	Props   []*Param
 }
+
+type VarAndType struct {
+	Var string
+
+	Type    string
+	Slice   string
+	Star    string
+	Package string
+}

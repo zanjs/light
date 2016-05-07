@@ -48,12 +48,3 @@ type Fragment struct {
 	Args []*VarAndType
 	Stmt string
 }
-
-type VarAndType struct {
-	Var string
-
-	Type    string
-	Slice   string
-	Star    string
-	Package string
-}

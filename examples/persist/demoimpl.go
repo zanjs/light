@@ -3,10 +3,10 @@
 package persist
 
 import (
-	"encoding/json"
-	"github.com/gotips/log"
-	"github.com/arstd/persist/examples/domain"
 	"bytes"
+	"encoding/json"
+	"github.com/arstd/persist/examples/domain"
+	"github.com/gotips/log"
 )
 
 var _ = json.Marshal
@@ -15,28 +15,21 @@ type DemoPersist struct{}
 
 func (*DemoPersist) Add(d *domain.Demo) (err error) {
 
-
-
 	d_DemoStruct, err := json.Marshal(d.DemoStruct)
 	if err != nil {
-		log.Errorf("marshal(%s) error: %s",d.DemoStruct, err)
+		log.Errorf("marshal(%s) error: %s", d.DemoStruct, err)
 	}
 
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
+	query.WriteString(" insert into demos(demo_name, demo_status, demo_struct) values($1,$2,$3) returning id")
+	args = append(args, d.DemoName, d.DemoStatus, d_DemoStruct)
 
-
-			query.WriteString(" insert into demos(demo_name, demo_status, demo_struct) values($1,$2,$3) returning id")
-			args = append(args, d.DemoName, d.DemoStatus, d_DemoStruct)
-
-
-
-
-		log.Debugf("%s", query)
-		log.JSONIndent(args...)
+	log.Debugf("%s", query)
+	log.JSONIndent(args...)
 	x := d
-	dest := []interface{}{ &x.Id }
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	dest := []interface{}{&x.Id}
+	err = db.DB.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", query, args, err)
 		return err
@@ -46,21 +39,14 @@ func (*DemoPersist) Add(d *domain.Demo) (err error) {
 
 func (*DemoPersist) Update(d *domain.Demo) (err error) {
 
-
-
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
+	query.WriteString(" update demos set demo_name=$1 where id=$2")
+	args = append(args, d.DemoName, d.Id)
 
-
-			query.WriteString(" update demos set demo_name=$1 where id=$2")
-			args = append(args, d.DemoName, d.Id)
-
-
-
-
-		log.Debugf("%s", query)
-		log.JSONIndent(args...)
-	res, err := db.Exec(query.String(), args...)
+	log.Debugf("%s", query)
+	log.JSONIndent(args...)
+	res, err := db.DB.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("update(%s, %#v) error: %s", query, args, err)
 		return err
@@ -72,93 +58,70 @@ func (*DemoPersist) Update(d *domain.Demo) (err error) {
 	} else if a != 1 {
 		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
 			query, args, a)
-		return err
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
 	}
 	return nil
 }
 
 func (*DemoPersist) Get(id string) (d *domain.Demo, err error) {
 
-
-
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
+	query.WriteString(" select id, demo_name, demo_status, demo_struct from demos where id=$1")
+	args = append(args, id)
 
-
-			query.WriteString(" select id, demo_name, demo_status, demo_struct from demos where id=$1")
-			args = append(args, id)
-
-
-
-
-		log.Debugf("%s", query)
-		log.JSONIndent(args...)
+	log.Debugf("%s", query)
+	log.JSONIndent(args...)
 	x := &domain.Demo{}
-    var x_DemoStruct []byte
-    dest := []interface{}{ &x.Id, &x.DemoName, &x.DemoStatus, &x_DemoStruct }
 
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	dest := []interface{}{&x.Id, &x.DemoName, &x.DemoStatus, &x_DemoStruct}
+
+	err = db.DB.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
 	}
-		
-		   
-		   x.DemoStruct = &bytes.Buffer{}
-		 	err = json.Unmarshal(x_DemoStruct, x.DemoStruct)
-		   if err != nil {
-			   log.Errorf("unmarshal(%s) error: %s",x_DemoStruct, err)
-		   }
-		   
+
+	x.DemoStruct = &bytes.Buffer{}
+	err = json.Unmarshal(x_DemoStruct, x.DemoStruct)
+	if err != nil {
+		log.Errorf("unmarshal(%s) error: %s", x_DemoStruct, err)
+	}
+
 	return x, nil
 }
 
 func (*DemoPersist) List(d *domain.Demo) (ds []*domain.Demo, err error) {
 
-
-
 	d_DemoStruct, err := json.Marshal(d.DemoStruct)
 	if err != nil {
-		log.Errorf("marshal(%s) error: %s",d.DemoStruct, err)
+		log.Errorf("marshal(%s) error: %s", d.DemoStruct, err)
 	}
 
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
+	query.WriteString(" select id, demo_name, demo_status, demo_struct from demos where ")
+	args = append(args)
 
+	if d.Id != "" {
+		query.WriteString(" id<=$1 and")
+		args = append(args, d.Id)
+	}
 
-			query.WriteString(" select id, demo_name, demo_status, demo_struct from demos where ")
-			args = append(args, )
+	query.WriteString("  demo_name=$2 ")
+	args = append(args, d.DemoName)
 
+	if d.DemoStatus != "" {
+		query.WriteString(" and demo_status=$3")
+		args = append(args, d.DemoStatus)
+	}
 
+	query.WriteString("  and demo_struct=$4")
+	args = append(args, d_DemoStruct)
 
-if d.Id!="" { 
-			query.WriteString(" id<=$1 and")
-			args = append(args, d.Id)
- } 
-
-
-
-			query.WriteString("  demo_name=$2 ")
-			args = append(args, d.DemoName)
-
-
-
-if d.DemoStatus!="" { 
-			query.WriteString(" and demo_status=$3")
-			args = append(args, d.DemoStatus)
- } 
-
-
-
-			query.WriteString("  and demo_struct=$4")
-			args = append(args, d_DemoStruct)
-
-
-
-
-		log.Debugf("%s", query)
-		log.JSONIndent(args...)
-	rows, err := db.Query(query.String(), args...)
+	log.Debugf("%s", query)
+	log.JSONIndent(args...)
+	rows, err := db.DB.Query(query.String(), args...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
@@ -170,7 +133,7 @@ if d.DemoStatus!="" {
 		ds = append(ds, &x)
 
 		var x_DemoStruct []byte
-		dest := []interface{}{ &x.Id, &x.DemoName, &x.DemoStatus, &x_DemoStruct }
+		dest := []interface{}{&x.Id, &x.DemoName, &x.DemoStatus, &x_DemoStruct}
 
 		err = rows.Scan(dest...)
 		if err != nil {
@@ -178,15 +141,11 @@ if d.DemoStatus!="" {
 			return nil, err
 		}
 
-
-	   
-		  
-		  x.DemoStruct = &bytes.Buffer{}
-		   err = json.Unmarshal(x_DemoStruct, x.DemoStruct)
-		  if err != nil {
-			  log.Errorf("unmarshal(%s) error: %s",x_DemoStruct, err)
-		  }
-		  
+		x.DemoStruct = &bytes.Buffer{}
+		err = json.Unmarshal(x_DemoStruct, x.DemoStruct)
+		if err != nil {
+			log.Errorf("unmarshal(%s) error: %s", x_DemoStruct, err)
+		}
 
 	}
 	if err = rows.Err(); err != nil {
@@ -198,21 +157,14 @@ if d.DemoStatus!="" {
 
 func (*DemoPersist) Delete(id string) (err error) {
 
-
-
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
+	query.WriteString(" delete from demos where id=$1")
+	args = append(args, id)
 
-
-			query.WriteString(" delete from demos where id=$1")
-			args = append(args, id)
-
-
-
-
-		log.Debugf("%s", query)
-		log.JSONIndent(args...)
-	res, err := db.Exec(query.String(), args...)
+	log.Debugf("%s", query)
+	log.JSONIndent(args...)
+	res, err := db.DB.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("delete(%s, %#v) error: %s", query, args, err)
 		return err
@@ -224,7 +176,7 @@ func (*DemoPersist) Delete(id string) (err error) {
 	} else if a != 1 {
 		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
 			query, args, a)
-		return err
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
 	}
 	return nil
 }

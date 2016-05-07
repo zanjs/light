@@ -24,4 +24,4 @@ _testmain.go
 *.prof
 
 # generated files
-examples/persist/demoimpl.go
+#examples/persist/demoimpl.go
