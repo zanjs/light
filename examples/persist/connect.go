@@ -32,3 +32,15 @@ func connect() (err error) {
 	log.Infof("successfully connect to %s", url)
 	return nil
 }
+
+func BeginTx() (*sql.Tx, error) {
+	return db.Begin()
+}
+
+func CommitTx(tx *sql.Tx) error {
+	return tx.Commit()
+}
+
+func RollbackTx(tx *sql.Tx) error {
+	return tx.Rollback()
+}

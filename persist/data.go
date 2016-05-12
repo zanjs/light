@@ -14,33 +14,25 @@ type MethodType string
 const (
 	MethodTypeAdd    = "add"
 	MethodTypeModify = "modify"
-	MethodTypeGet    = "get"
-	MethodTypeList   = "list"
 	MethodTypeRemove = "remove"
-	MethodTypePage   = "page"
+	MethodTypeGet    = "get"
+	MethodTypeCount  = "count"
+	MethodTypeList   = "list"
 )
 
 type Method struct {
 	Type MethodType
 
 	Name    string
-	Params  []*Param
-	Returns []*Param
+	Params  []*VarAndType
+	Returns []*VarAndType
 
-	In         string
-	Result     string
-	ResultType string
-
-	Prefix   string
-	Suffix   string
-	Args     []string
-	Marshals []string
-
+	Marshals  []*VarAndType
 	Fragments []*Fragment
 
-	Scans       []string
-	Unmarshals  []string
-	Unmarshals1 []*Param
+	Result     *VarAndType
+	Scans      []*VarAndType
+	Unmarshals []*VarAndType
 }
 
 type Fragment struct {

@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/gotips/log"
 )
 
 func prepare(itf *Interface) (impl *Implement) {
@@ -36,33 +38,26 @@ func prepareMethod(m *Method, f *Func) {
 	m.Params = f.Params
 	m.Returns = f.Returns
 
-	sql := strings.Trim(f.Doc, " \t")
-	m.Type = getMethodType(sql, f)
+	m.Type = getMethodType(f.Doc, f)
 
 	calcInResult(m, f)
 
-	calcFragment(m, sql)
+	calcFragment(m, f.Doc)
 
 	calcMarshals(m)
 
-	calcScans(m, sql)
+	calcScans(m, f.Doc)
 
 	calcUnmarshals(m)
 }
 
 func calcInResult(m *Method, f *Func) {
-	if m.Type == MethodTypeGet {
-		m.In = f.Params[0].Name
-		m.Result, m.ResultType = f.Returns[0].Name, f.Returns[0].Type[1:]
-	} else if m.Type == MethodTypeList {
-		m.In = f.Params[0].Name
-		m.Result, m.ResultType = f.Returns[0].Name, f.Returns[0].Type[3:]
-	} else if m.Type == MethodTypePage {
-		m.In = f.Params[0].Name
-		m.Result, m.ResultType = f.Returns[1].Name, f.Returns[1].Type[3:]
-	} else {
-		m.In = f.Params[0].Name
-		m.Result, m.ResultType = f.Params[0].Name, f.Params[0].Type[1:]
+	switch m.Type {
+	case MethodTypeAdd, MethodTypeModify, MethodTypeRemove:
+		m.Result = f.Params[0]
+	case MethodTypeGet, MethodTypeList:
+		m.Result = f.Returns[0]
+	default:
 	}
 }
 
@@ -70,26 +65,35 @@ func getMethodType(sql string, f *Func) MethodType {
 	switch sql[:strings.Index(sql, " ")] {
 	case "insert":
 		return MethodTypeAdd
+
 	case "update":
 		return MethodTypeModify
+
 	case "delete":
 		return MethodTypeRemove
+
 	case "select":
-		if len(f.Returns) == 3 {
-			return MethodTypePage
-		} else {
-			if len(f.Returns) > 0 && strings.HasPrefix(f.Returns[0].Type, "[]") {
-				return MethodTypeList
-			} else {
-				return MethodTypeGet
-			}
+		if len(f.Returns) != 2 {
+			log.Fatal("select method must return two result")
 		}
+		if f.Returns[0].Slice != "" {
+			return MethodTypeList
+		} else {
+			countSQL := sql[strings.Index(sql, " "):]
+			countSQL = strings.TrimSpace(countSQL)
+			if strings.HasPrefix(countSQL, "count") {
+				return MethodTypeCount
+			}
+
+			return MethodTypeGet
+		}
+
 	default:
-		panic("sql error: " + sql)
 	}
+	panic("sql error: " + sql)
 }
 
-var fregmentRegexp = regexp.MustCompile(`\[\?\((.+?)\)(.+?)\]`)
+var fregmentRegexp = regexp.MustCompile(`\[\?\{(.+?)\}(.+?)\]`)
 
 func calcFragment(m *Method, sql string) {
 	matched := fregmentRegexp.FindAllStringSubmatchIndex(sql, -1)
@@ -97,29 +101,44 @@ func calcFragment(m *Method, sql string) {
 	dollar := new(int)
 
 	if len(matched) == 0 {
-		m.Fragments = append(m.Fragments, getFragment(sql, "", dollar))
+		fm := getFragment(m, sql, "", dollar)
+		if fm != nil {
+			m.Fragments = append(m.Fragments, fm)
+		}
 		return
 	}
 
 	before := 0
 	for _, group := range matched {
 		if before != group[0] {
-			m.Fragments = append(m.Fragments, getFragment(sql[before:group[0]], "", dollar))
+			fm := getFragment(m, sql[before:group[0]], "", dollar)
+			if fm != nil {
+				m.Fragments = append(m.Fragments, fm)
+			}
 		}
-		m.Fragments = append(m.Fragments,
-			getFragment(sql[group[4]:group[5]], sql[group[2]:group[3]], dollar))
+		fm := getFragment(m, sql[group[4]:group[5]], sql[group[2]:group[3]], dollar)
+		if fm != nil {
+			m.Fragments = append(m.Fragments, fm)
+		}
 
 		before = group[1]
 	}
 
 	if before != len(sql) {
-		m.Fragments = append(m.Fragments, getFragment(sql[before:], "", dollar))
+		log.Debugf("?%s?", sql[before:])
+
+		m.Fragments = append(m.Fragments, getFragment(m, sql[before:], "", dollar))
 	}
 }
 
 var placeholderRegexp = regexp.MustCompile(`\$\{(.+?)\}`)
 
-func getFragment(sql string, cond string, dollar *int) (fm *Fragment) {
+func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment) {
+	sql = strings.TrimSpace(sql)
+	if sql == "" {
+		return nil
+	}
+
 	fm = &Fragment{Cond: cond}
 	matched := placeholderRegexp.FindAllStringSubmatchIndex(sql, -1)
 	if len(matched) == 0 {
@@ -140,7 +159,7 @@ func getFragment(sql string, cond string, dollar *int) (fm *Fragment) {
 		*dollar++
 		fm.Stmt += "$" + strconv.Itoa(*dollar)
 
-		fm.Args = append(fm.Args, getVarAndType(sql[group[2]:group[3]]))
+		calcArgs(m, fm, sql[group[2]:group[3]])
 
 		before = group[1]
 	}
@@ -151,23 +170,52 @@ func getFragment(sql string, cond string, dollar *int) (fm *Fragment) {
 	return fm
 }
 
-func getVarAndType(v string) (t *VarAndType) {
-	t = &VarAndType{Var: v}
+func calcArgs(m *Method, fm *Fragment, v string) {
+	sv := strings.Split(v, ".")
 
-	// TODO
-	// Var string
-	//
-	// Type    string
-	// Slice   string
-	// Star    string
-	// Package string
-	return t
+	if len(sv) == 1 {
+		for _, vt := range m.Params {
+			if vt.Var == v {
+				fm.Args = append(fm.Args, vt)
+				return
+			}
+		}
+		panic("variable " + v + " not in params")
+	}
+
+	if len(sv) > 2 {
+		panic("unsupport x.y.z variable")
+	}
+
+	f := strings.TrimSpace(sv[1])
+	f = strings.Replace(f, "_", " ", -1)
+	f = strings.Title(f)
+	f = strings.Replace(f, " ", "", -1)
+
+	for _, p := range m.Params {
+		if p.Var != sv[0] {
+			continue
+		}
+		for _, prop := range p.Props {
+			tmp := *prop
+			tmp.Scope = p.Var
+			if tmp.Var == f {
+				fm.Args = append(fm.Args, &tmp)
+				return
+			}
+		}
+	}
+	panic("variable " + v + " not in params")
 }
 
 func calcScans(m *Method, sql string) {
 	var start, end int
 	switch m.Type {
-	case MethodTypeGet, MethodTypeList, MethodTypePage:
+	case MethodTypeCount:
+		m.Scans = append(m.Scans, m.Returns[0])
+		return
+
+	case MethodTypeGet, MethodTypeList:
 		start, end = 6, strings.Index(sql, " from ")
 
 	case MethodTypeAdd, MethodTypeModify, MethodTypeRemove:
@@ -182,65 +230,58 @@ func calcScans(m *Method, sql string) {
 		}
 
 	default:
-		panic("unreachable code")
+		panic("unreachable code for " + string(m.Type))
 	}
 
 	fields := strings.Split(sql[start:end], ",")
+	// log.JSON(fields)
+next:
 	for _, f := range fields {
-		f = strings.Trim(f, " \t")
+		// abc_def => AbcDef
+		f := strings.TrimSpace(f)
 		f = strings.Replace(f, "_", " ", -1)
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
-		m.Scans = append(m.Scans, "x."+f)
+
+		for _, p := range m.Returns {
+			if p.Package == "" || p.Package == "sql" {
+				continue
+			}
+			for _, prop := range p.Props {
+				tmp := *prop
+				tmp.Scope = p.Var
+				tmp.Concat = "."
+				if tmp.Var == f {
+					m.Scans = append(m.Scans, &tmp)
+					continue next
+				}
+			}
+		}
 	}
 }
 
 func calcMarshals(m *Method) {
-	for _, p := range m.Params {
-		for _, prop := range p.Props {
-			switch prop.Type {
-			case "int", "int64", "int32", "int16", "int8":
-			case "uint", "uint64", "uint32", "uin16", "uint8", "byte":
-			case "string":
-			default:
-				for _, fm := range m.Fragments {
-					for i, arg := range fm.Args {
-						if arg.Var == m.In+"."+prop.Name {
-							fm.Args[i].Var = m.In + "_" + prop.Name
-							m.Marshals = append(m.Marshals, prop.Name)
-						}
-					}
-				}
+	for _, fm := range m.Fragments {
+		for _, prop := range fm.Args {
+			if isBuiltin(prop.Type) {
+				continue
 			}
+			prop.Concat = "_"
+
+			tmp := *prop
+			tmp.Concat = "_"
+			m.Marshals = append(m.Marshals, &tmp)
 		}
 	}
 }
 
 func calcUnmarshals(m *Method) {
-	for _, p := range m.Returns {
-		for _, prop := range p.Props {
-			switch prop.Type {
-			case "int", "int64", "int32", "int16", "int8":
-			case "uint", "uint64", "uint32", "uin16", "uint8", "byte":
-			case "string":
-			default:
-				for i, scan := range m.Scans {
-					if scan == "x."+prop.Name {
-						m.Scans[i] = "x_" + prop.Name
-						m.Unmarshals = append(m.Unmarshals, prop.Name)
-						switch prop.Type[0] {
-						case 'm':
-						case '*':
-							prop.Type = "&" + prop.Type[1:]
-						case '[':
-							prop.Type = "[]*" + m.ResultType[:strings.Index(m.ResultType, ".")+1] + prop.Type[3:]
-						default:
-							prop.Type = "&" + m.ResultType[:strings.Index(m.ResultType, ".")+1] + prop.Type
-						}
-						m.Unmarshals1 = append(m.Unmarshals1, prop)
-					}
-				}
-			}
+	for _, prop := range m.Scans {
+		// prop.Scope = p.Var
+		if prop.Alias != "" || isBuiltin(prop.Type) {
+			continue
 		}
+		prop.Concat = "_"
+		m.Unmarshals = append(m.Unmarshals, prop)
 	}
 }

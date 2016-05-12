@@ -1,19 +1,26 @@
 package domain
 
-import "bytes"
-
-// Demo xxx
+// Demo 示例结构体
 type Demo struct {
-	Id         string
-	DemoName   string
-	DemoStatus string
-	DemoStruct *bytes.Buffer
+	Id         int
+	Name       string
+	ThirdField bool
+	Status     Status
+	Content    *Demo
 }
 
-//
-// create table demos (
-// id uuid primary key default gen_random_uuid(),
-// demo_name text,
-// demo_status text,
-// demo_struct jsonb
-// );
+type Status int8
+
+const (
+	StatusNormal Status = 1
+)
+
+/*
+create table demos (
+	id serial primary key,
+	name text,
+	third_field bool,
+	status smallint,
+	Content text
+)
+*/

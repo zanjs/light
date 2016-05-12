@@ -2,7 +2,6 @@ package persist
 
 import (
 	"bytes"
-	"go/format"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -20,12 +19,12 @@ func Main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// log.JSONIndent(mjs)
+	// log.JSONIndent(meta)
 
 	data := prepare(meta)
-	// log.JSONIndent(js)
+	// log.JSONIndent(data)
 
-	tplFile := "../../persist/persist.tpl"
+	tplFile := "../../persist/persist.txt"
 	t, err := template.ParseFiles(tplFile)
 	if err != nil {
 		log.Error(err)
@@ -37,11 +36,12 @@ func Main() {
 	}
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
-	// ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
-	pretty, err := format.Source(buf.Bytes())
-	if err != nil {
-		log.Fatal(err)
-	}
-	ioutil.WriteFile(filename, pretty, 0644)
+	ioutil.WriteFile(filename, buf.Bytes(), 0644)
+
+	// pretty, err := format.Source(buf.Bytes())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// ioutil.WriteFile(filename, pretty, 0644)
 }

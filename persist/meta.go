@@ -9,22 +9,21 @@ type Interface struct {
 type Func struct {
 	Name    string
 	Doc     string
-	Params  []*Param
-	Returns []*Param
+	Params  []*VarAndType
+	Returns []*VarAndType
 }
 
-type Param struct {
-	Package string
-	Name    string
-	Type    string
-	Props   []*Param
-}
-
+// var ds []*domain.Demo
 type VarAndType struct {
-	Var string
+	Var     string // ds
+	Scope   string // d for Status means d.Status
+	Concat  string // _ for status meas d_Stauts
+	Type    string // Demo
+	Alias   string // type Status int8
+	Slice   string // []
+	Star    string // *
+	Package string // domain
+	Path    string // github.com/arstd/persist/examples/domain
 
-	Type    string
-	Slice   string
-	Star    string
-	Package string
+	Props []*VarAndType // Demo Props
 }
