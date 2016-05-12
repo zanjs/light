@@ -15,9 +15,12 @@ type Func struct {
 
 // var ds []*domain.Demo
 type VarAndType struct {
-	Var     string // ds
-	Scope   string // d for Status means d.Status
-	Concat  string // _ for status meas d_Stauts
+	Var    string // ds
+	Scope  string // d for Status means d.Status
+	Concat string // _ for status meas d_Stauts
+
+	SQLIn bool // status in(${statuses})
+
 	Type    string // Demo
 	Alias   string // type Status int8
 	Slice   string // []

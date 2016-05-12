@@ -93,7 +93,7 @@ func getMethodType(sql string, f *Func) MethodType {
 	panic("sql error: " + sql)
 }
 
-var fregmentRegexp = regexp.MustCompile(`\[\?\{(.+?)\}(.+?)\]`)
+var fregmentRegexp = regexp.MustCompile(`\[\?\{(.+?)\}(.+?) \]`)
 
 func calcFragment(m *Method, sql string) {
 	matched := fregmentRegexp.FindAllStringSubmatchIndex(sql, -1)
@@ -155,11 +155,15 @@ func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment)
 		//= select ... from demos where id <
 		fm.Stmt += sql[before:group[0]]
 
+		vt := calcArgs(m, fm, sql[group[2]:group[3]])
+		if vt.Slice == "[]" {
+			vt.SQLIn = true
+		}
+
 		//= select ... from demos where id < $1
 		*dollar++
 		fm.Stmt += "$" + strconv.Itoa(*dollar)
-
-		calcArgs(m, fm, sql[group[2]:group[3]])
+		fm.Args = append(fm.Args, vt)
 
 		before = group[1]
 	}
@@ -170,14 +174,13 @@ func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment)
 	return fm
 }
 
-func calcArgs(m *Method, fm *Fragment, v string) {
+func calcArgs(m *Method, fm *Fragment, v string) *VarAndType {
 	sv := strings.Split(v, ".")
 
 	if len(sv) == 1 {
 		for _, vt := range m.Params {
 			if vt.Var == v {
-				fm.Args = append(fm.Args, vt)
-				return
+				return vt
 			}
 		}
 		panic("variable " + v + " not in params")
@@ -200,8 +203,7 @@ func calcArgs(m *Method, fm *Fragment, v string) {
 			tmp := *prop
 			tmp.Scope = p.Var
 			if tmp.Var == f {
-				fm.Args = append(fm.Args, &tmp)
-				return
+				return &tmp
 			}
 		}
 	}
@@ -210,6 +212,7 @@ func calcArgs(m *Method, fm *Fragment, v string) {
 
 func calcScans(m *Method, sql string) {
 	var start, end int
+	ret := m.Returns
 	switch m.Type {
 	case MethodTypeCount:
 		m.Scans = append(m.Scans, m.Returns[0])
@@ -219,6 +222,7 @@ func calcScans(m *Method, sql string) {
 		start, end = 6, strings.Index(sql, " from ")
 
 	case MethodTypeAdd, MethodTypeModify, MethodTypeRemove:
+		ret = m.Params
 		start = strings.Index(sql, " returning ")
 		if start == -1 {
 			return
@@ -234,7 +238,6 @@ func calcScans(m *Method, sql string) {
 	}
 
 	fields := strings.Split(sql[start:end], ",")
-	// log.JSON(fields)
 next:
 	for _, f := range fields {
 		// abc_def => AbcDef
@@ -243,15 +246,15 @@ next:
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
 
-		for _, p := range m.Returns {
+		for _, p := range ret {
 			if p.Package == "" || p.Package == "sql" {
 				continue
 			}
 			for _, prop := range p.Props {
-				tmp := *prop
-				tmp.Scope = p.Var
-				tmp.Concat = "."
-				if tmp.Var == f {
+				if prop.Var == f {
+					tmp := *prop
+					tmp.Scope = p.Var
+					tmp.Concat = "."
 					m.Scans = append(m.Scans, &tmp)
 					continue next
 				}

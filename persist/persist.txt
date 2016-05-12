@@ -3,6 +3,7 @@
 package {{.Package}}
 
 import (
+	"fmt"
 	"bytes"
 	"encoding/json"
 	"github.com/gotips/log"
@@ -11,40 +12,48 @@ import (
 )
 
 var _ = json.Marshal
+var _ = fmt.Sprintf
 
 type {{ .Name }} struct{}
 
 {{- range .Methods }}
 
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) ({{range $i,$vt := .Returns}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) {
-
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-{{range .Fragments}}
-{{- if ne .Cond ""}}
+{{- range .Fragments}}
+{{if .Cond }}
 	if {{.Cond}} {
 {{- end}}
 		query.WriteString("{{.Stmt}} ")
 {{- range $i, $vt := .Args}}
-	{{- if .Package }}
+	{{- if eq .SQLIn true}}
+		s := fmt.Sprintf("%v", {{.Scope}}{{and .Scope "."}}{{.Var}})
+		args = append(args, "{"+s[1:len(s)-1]+"}")
+
+	{{- else if .Package }}
 		{{.Scope}}{{and .Scope "_"}}{{.Var}}, err := json.Marshal({{.Scope}}{{and .Scope "."}}{{.Var}})
 		if err != nil {
 			log.Errorf("marshal(%#v) error: %s",{{.Scope}}.{{.Var}}, err)
 		}
-		args = append(args, {{$vt.Scope}}{{and .Scope "_"}}{{$vt.Var}})
+		args = append(args, {{$vt.Scope}}{{$vt.Concat}}{{$vt.Var}})
+
 	{{- else }}
 		args = append(args, {{$vt.Scope}}{{and .Scope "."}}{{$vt.Var}})
 	{{- end }}
 {{- end }}
-	{{- if ne .Cond ""}}
+	{{- if .Cond}}
 	}{{end}}
-{{end}}
+{{- end}}
 
 	log.Debug(query.String())
 	log.Debug(args...)
 
 {{- if .Type | eq "add" }}
-    dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan.Var}}{{end}} }
+	{{- if .Unmarshals}}
+	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
+	{{- end}}
+	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 	err = db.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", query, args, err)
@@ -87,24 +96,32 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	return nil
 
 {{- else if .Type | eq "get"}}
-	x := &{{.Result.Package}}{{.Result.Type}}{}
-    var {{range $i, $scan := .Unmarshals}}{{if ne $i 0}}, {{end}}x_{{$scan.Var}}{{end}} []byte
-    dest := []interface{}{ {{range $i, $scan := .Scans}}{{if ne $i 0}}, {{end}}&{{$scan.Var}}{{end}} }
+	var x {{.Result.Package}}{{and .Result.Package "."}}{{.Result.Type}}
+	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
+	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	err := db.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
 	}
 
-		   {{range .Unmarshals}}
-		   x.{{.Var}} = {{.Type}}{}
-		 	err = json.Unmarshal(x_{{.Var}}, x.{{.Var}})
-		   if err != nil {
-			   log.Errorf("unmarshal(%s) error: %s",x_{{.Var}}, err)
-		   }
-		   {{end}}
-	return x, nil
+	{{- range .Unmarshals}}
+		  	{{or .Scope "x"}}{{and .Concat "."}}{{.Var}} = new({{.Package}}{{and .Package "."}}{{.Type}})
+			err = json.Unmarshal({{or .Scope "x"}}{{.Concat}}{{.Var}}, {{or .Scope "x"}}{{and .Concat "."}}{{.Var}})
+			if err != nil {
+				log.Errorf("unmarshal(%s) error: %s",{{or .Scope "x"}}{{.Concat}}{{.Var}}, err)
+			}
+	{{- end}}
+	return &x, nil
+{{- else if .Type | eq "count"}}
+	var count int
+	err := db.QueryRow(query.String(), args...).Scan(&count)
+	if err != nil {
+		log.Errorf("query(%s, %#v) error: %s", query, args, err)
+		return 0, err
+	}
+	return count, nil
 
 {{- else if .Type | eq "list"}}
 	rows, err := db.Query(query.String(), args...)
@@ -128,14 +145,13 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 			return nil, err
 		}
 
-	  {{range .Unmarshals}}
+{{- range .Unmarshals}}
 	  	{{or .Scope "x"}}{{and .Concat "."}}{{.Var}} = new({{.Package}}{{and .Package "."}}{{.Type}})
 		err = json.Unmarshal({{or .Scope "x"}}{{.Concat}}{{.Var}}, {{or .Scope "x"}}{{and .Concat "."}}{{.Var}})
 		if err != nil {
-		  log.Errorf("unmarshal(%s) error: %s",{{or .Scope "x"}}{{.Concat}}{{.Var}}, err)
+			log.Errorf("unmarshal(%s) error: %s",{{or .Scope "x"}}{{.Concat}}{{.Var}}, err)
 		}
-	  {{end}}
-
+{{- end}}
 	}
 	if err = rows.Err(); err != nil {
 		log.Errorf("scan rows for query(%s, %#v) last error: %s", query, args, err)
