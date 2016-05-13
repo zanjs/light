@@ -3,19 +3,21 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"text/template"
 )
 
-var db string
+var db, path string
 
 func main() {
-
 	flag.StringVar(&db, "db", "db", "db variable to Query/QueryRow/Exec")
+	flag.StringVar(&path, "path", "", "db variable path")
 
 	flag.Parse()
+	if path != "" && path[0] != '"' {
+		path = `"` + path + `"`
+	}
 
 	gofile := os.Getenv("GOFILE")
 
@@ -52,7 +54,7 @@ func main() {
 	// 	panic(err)
 	// }
 	// ioutil.WriteFile(filename, pretty, 0644)
-
-	pwd, _ := os.Getwd()
-	fmt.Printf("Generate file %s/%s\n", pwd, filename)
+	//
+	// pwd, _ := os.Getwd()
+	// fmt.Printf("Generate file %s/%s\n", pwd, filename)
 }

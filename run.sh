@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # install persist
 go-bindata persist.txt
 go install

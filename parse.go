@@ -50,13 +50,13 @@ func parseImports(genDecl *ast.GenDecl, itf *Interface) {
 			continue
 		}
 
-		path := ""
+		imp := ""
 		if importSpec.Name != nil {
-			path += importSpec.Name.Name + " "
+			imp += importSpec.Name.Name + " "
 		}
-		path += importSpec.Path.Value
+		imp += importSpec.Path.Value
 
-		itf.Imports = append(itf.Imports, path)
+		itf.Imports = append(itf.Imports, imp)
 	}
 }
 
@@ -158,7 +158,7 @@ func parseExpr(vat *VarAndType, expr ast.Expr) string {
 }
 
 func getDoc(g *ast.CommentGroup) (doc string) {
-	if len(g.List) == 0 {
+	if g == nil || len(g.List) == 0 {
 		panic("no comment")
 	}
 

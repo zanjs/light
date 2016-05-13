@@ -13,6 +13,9 @@ func prepare(itf *Interface) (impl *Implement) {
 	impl.Package = os.Getenv("GOPACKAGE")
 
 	impl.Imports = itf.Imports
+	if path != "" {
+		impl.Imports = append(impl.Imports, path)
+	}
 
 	impl.Name = itf.Name
 	if strings.HasSuffix(impl.Name, "Persister") {
