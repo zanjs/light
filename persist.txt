@@ -13,6 +13,7 @@ import (
 
 var _ = json.Marshal
 var _ = fmt.Sprintf
+var _ = sql.Open
 
 type {{ .Name }} struct{}
 
@@ -54,7 +55,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
 	{{- end}}
 	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
-	err = db.QueryRow(query.String(), args...).Scan(dest...)
+	err = {{.Tx}}.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", query, args, err)
 		return err
@@ -62,7 +63,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	return nil
 
 {{- else if .Type | eq "modify"}}
-	res, err := db.Exec(query.String(), args...)
+	res, err := {{.Tx}}.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("update(%s, %#v) error: %s", query, args, err)
 		return err
@@ -79,7 +80,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	return nil
 
 {{- else if .Type | eq "remove"}}
-	res, err := db.Exec(query.String(), args...)
+	res, err := {{.Tx}}.Exec(query.String(), args...)
 	if err != nil {
 		log.Errorf("delete(%s, %#v) error: %s", query, args, err)
 		return err
@@ -100,7 +101,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
 	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 
-	err := db.QueryRow(query.String(), args...).Scan(dest...)
+	err := {{.Tx}}.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
@@ -114,9 +115,10 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 			}
 	{{- end}}
 	return &x, nil
+
 {{- else if .Type | eq "count"}}
 	var count int
-	err := db.QueryRow(query.String(), args...).Scan(&count)
+	err := {{.Tx}}.QueryRow(query.String(), args...).Scan(&count)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return 0, err
@@ -124,7 +126,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	return count, nil
 
 {{- else if .Type | eq "list"}}
-	rows, err := db.Query(query.String(), args...)
+	rows, err := {{.Tx}}.Query(query.String(), args...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
@@ -145,13 +147,13 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 			return nil, err
 		}
 
-{{- range .Unmarshals}}
+		{{- range .Unmarshals}}
 	  	{{or .Scope "x"}}{{and .Concat "."}}{{.Var}} = new({{.Package}}{{and .Package "."}}{{.Type}})
 		err = json.Unmarshal({{or .Scope "x"}}{{.Concat}}{{.Var}}, {{or .Scope "x"}}{{and .Concat "."}}{{.Var}})
 		if err != nil {
 			log.Errorf("unmarshal(%s) error: %s",{{or .Scope "x"}}{{.Concat}}{{.Var}}, err)
 		}
-{{- end}}
+		{{- end}}
 	}
 	if err = rows.Err(); err != nil {
 		log.Errorf("scan rows for query(%s, %#v) last error: %s", query, args, err)

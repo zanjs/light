@@ -1,6 +1,7 @@
-package persist
+package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/parser"
@@ -8,15 +9,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/gotips/log"
 )
 
 func parseFile(gofile string) (itf *Interface, err error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, gofile, nil, parser.ParseComments)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	// ast.Print(fset, f)
@@ -149,9 +148,8 @@ func parseExpr(vat *VarAndType, expr ast.Expr) string {
 		return ""
 
 	default:
-		log.Fatalf("%#v", expr)
+		panic(fmt.Sprintf("unsupported type: %#v", expr))
 	}
-	return ""
 }
 
 func getDoc(g *ast.CommentGroup) (doc string) {
@@ -200,7 +198,6 @@ func parseStruct(itf *Interface, vat *VarAndType) {
 			vat.Alias = typ
 			return
 		}
-		log.Warnf("%#v: %#v not implemented", vat, typeSpec.Type)
 		return
 	}
 
@@ -249,7 +246,7 @@ func fillTypePath(itf *Interface, vat *VarAndType) {
 			vat.Path = imp[len(vat.Package)+1:]
 			vat.Path, err = strconv.Unquote(vat.Type)
 			if err != nil {
-				log.Fatalf("unquote %s error: %s", imp[len(vat.Package)+1:], err)
+				panic(fmt.Sprintf("unquote %s error: %s", imp[len(vat.Package)+1:], err))
 			}
 			return
 		}
@@ -257,7 +254,7 @@ func fillTypePath(itf *Interface, vat *VarAndType) {
 		if strings.HasSuffix(imp, vat.Package+`"`) {
 			vat.Path, err = strconv.Unquote(imp)
 			if err != nil {
-				log.Fatalf("unquote %s error: %s", imp, err)
+				panic(fmt.Sprintf("unquote %s error: %s", imp, err))
 			}
 			return
 		}
@@ -290,6 +287,5 @@ func getTypeSpec(path, name string) (typeSpec *ast.TypeSpec) {
 		}
 	}
 
-	log.Fatalf("%s.%s not exist", path, name)
-	return nil
+	panic(fmt.Sprintf("%s.%s not exist", path, name))
 }

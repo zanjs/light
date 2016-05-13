@@ -6,7 +6,7 @@ import (
 	"github.com/arstd/persist/examples/domain"
 )
 
-//go:generate go run ../../main.go
+//go:generate persist
 
 // DemoPersister 示例接口
 type DemoPersister interface {

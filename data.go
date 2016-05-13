@@ -1,4 +1,4 @@
-package persist
+package main
 
 type Implement struct {
 	Source  string
@@ -24,6 +24,7 @@ type Method struct {
 	Type MethodType
 
 	Name    string
+	Tx      string
 	Params  []*VarAndType
 	Returns []*VarAndType
 

@@ -1,12 +1,10 @@
-package persist
+package main
 
 import (
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/gotips/log"
 )
 
 func prepare(itf *Interface) (impl *Implement) {
@@ -36,6 +34,8 @@ func prepare(itf *Interface) (impl *Implement) {
 func prepareMethod(m *Method, f *Func) {
 	m.Name = f.Name
 	m.Params = f.Params
+	m.Tx = calcTx(m.Params)
+
 	m.Returns = f.Returns
 
 	m.Type = getMethodType(f.Doc, f)
@@ -49,6 +49,16 @@ func prepareMethod(m *Method, f *Func) {
 	calcScans(m, f.Doc)
 
 	calcUnmarshals(m)
+}
+
+func calcTx(ps []*VarAndType) string {
+	for _, vt := range ps {
+		if vt.Package == "Tx" {
+			return vt.Var
+		}
+	}
+
+	return "db"
 }
 
 func calcInResult(m *Method, f *Func) {
@@ -74,7 +84,7 @@ func getMethodType(sql string, f *Func) MethodType {
 
 	case "select":
 		if len(f.Returns) != 2 {
-			log.Fatal("select method must return two result")
+			panic("select method must return two result")
 		}
 		if f.Returns[0].Slice != "" {
 			return MethodTypeList
@@ -125,8 +135,6 @@ func calcFragment(m *Method, sql string) {
 	}
 
 	if before != len(sql) {
-		log.Debugf("?%s?", sql[before:])
-
 		m.Fragments = append(m.Fragments, getFragment(m, sql[before:], "", dollar))
 	}
 }

@@ -3,39 +3,40 @@
 package persist
 
 import (
-	"fmt"
 	"bytes"
-	"encoding/json"
-	"github.com/gotips/log"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"github.com/arstd/persist/examples/domain"
+	"github.com/gotips/log"
 )
 
 var _ = json.Marshal
 var _ = fmt.Sprintf
+var _ = sql.Open
 
 type DemoPersist struct{}
 
-func (*DemoPersist) Add(d *domain.Demo) ( error) {
+func (*DemoPersist) Add(d *domain.Demo) error {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("insert into demos(name, third_field, status, content) values($1, $2, $3, $4) returning id ")
-		args = append(args, d.Name)
-		args = append(args, d.ThirdField)
-		d_Status, err := json.Marshal(d.Status)
-		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Status, err)
-		}
-		args = append(args, d_Status)
-		d_Content, err := json.Marshal(d.Content)
-		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Content, err)
-		}
-		args = append(args, d_Content)
+	query.WriteString("insert into demos(name, third_field, status, content) values($1, $2, $3, $4) returning id ")
+	args = append(args, d.Name)
+	args = append(args, d.ThirdField)
+	d_Status, err := json.Marshal(d.Status)
+	if err != nil {
+		log.Errorf("marshal(%#v) error: %s", d.Status, err)
+	}
+	args = append(args, d_Status)
+	d_Content, err := json.Marshal(d.Content)
+	if err != nil {
+		log.Errorf("marshal(%#v) error: %s", d.Content, err)
+	}
+	args = append(args, d_Content)
 
 	log.Debug(query.String())
 	log.Debug(args...)
-	dest := []interface{}{ &d.Id }
+	dest := []interface{}{&d.Id}
 	err = db.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", query, args, err)
@@ -44,23 +45,23 @@ func (*DemoPersist) Add(d *domain.Demo) ( error) {
 	return nil
 }
 
-func (*DemoPersist) Modify(d *domain.Demo) ( error) {
+func (*DemoPersist) Modify(d *domain.Demo) error {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("update demos set name=$1, third_field=$2, status=$3, content=$4 where id=$5 ")
-		args = append(args, d.Name)
-		args = append(args, d.ThirdField)
-		d_Status, err := json.Marshal(d.Status)
-		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Status, err)
-		}
-		args = append(args, d_Status)
-		d_Content, err := json.Marshal(d.Content)
-		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Content, err)
-		}
-		args = append(args, d_Content)
-		args = append(args, d.Id)
+	query.WriteString("update demos set name=$1, third_field=$2, status=$3, content=$4 where id=$5 ")
+	args = append(args, d.Name)
+	args = append(args, d.ThirdField)
+	d_Status, err := json.Marshal(d.Status)
+	if err != nil {
+		log.Errorf("marshal(%#v) error: %s", d.Status, err)
+	}
+	args = append(args, d_Status)
+	d_Content, err := json.Marshal(d.Content)
+	if err != nil {
+		log.Errorf("marshal(%#v) error: %s", d.Content, err)
+	}
+	args = append(args, d_Content)
+	args = append(args, d.Id)
 
 	log.Debug(query.String())
 	log.Debug(args...)
@@ -81,11 +82,11 @@ func (*DemoPersist) Modify(d *domain.Demo) ( error) {
 	return nil
 }
 
-func (*DemoPersist) Remove(id int) ( error) {
+func (*DemoPersist) Remove(id int) error {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("delete from demos where id=$1 ")
-		args = append(args, id)
+	query.WriteString("delete from demos where id=$1 ")
+	args = append(args, id)
 
 	log.Debug(query.String())
 	log.Debug(args...)
@@ -106,36 +107,36 @@ func (*DemoPersist) Remove(id int) ( error) {
 	return nil
 }
 
-func (*DemoPersist) Get(id int) ( *domain.Demo,  error) {
+func (*DemoPersist) Get(id int) (*domain.Demo, error) {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("select id, name, third_field, status, content from demos where id=$1 ")
-		args = append(args, id)
+	query.WriteString("select id, name, third_field, status, content from demos where id=$1 ")
+	args = append(args, id)
 
 	log.Debug(query.String())
 	log.Debug(args...)
 	var x domain.Demo
 	var x_Content []byte
-	dest := []interface{}{ &x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content }
+	dest := []interface{}{&x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content}
 
 	err := db.QueryRow(query.String(), args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", query, args, err)
 		return nil, err
 	}
-		  	x.Content = new(domain.Demo)
-			err = json.Unmarshal(x_Content, x.Content)
-			if err != nil {
-				log.Errorf("unmarshal(%s) error: %s",x_Content, err)
-			}
+	x.Content = new(domain.Demo)
+	err = json.Unmarshal(x_Content, x.Content)
+	if err != nil {
+		log.Errorf("unmarshal(%s) error: %s", x_Content, err)
+	}
 	return &x, nil
 }
 
-func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) ( int,  error) {
+func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) (int, error) {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("select count(id) from demos where name=$1 ")
-		args = append(args, d.Name)
+	query.WriteString("select count(id) from demos where name=$1 ")
+	args = append(args, d.Name)
 
 	if d.ThirdField != false {
 		query.WriteString("and third_field=$2 ")
@@ -146,7 +147,7 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) 
 		query.WriteString("and content=$3 ")
 		d_Content, err := json.Marshal(d.Content)
 		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Content, err)
+			log.Errorf("marshal(%#v) error: %s", d.Content, err)
 		}
 		args = append(args, d_Content)
 	}
@@ -168,11 +169,11 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) 
 	return count, nil
 }
 
-func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, page int, size int) ( []*domain.Demo,  error) {
+func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, page int, size int) ([]*domain.Demo, error) {
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
-		query.WriteString("select id, name, third_field, status, content from demos where name=$1 ")
-		args = append(args, d.Name)
+	query.WriteString("select id, name, third_field, status, content from demos where name=$1 ")
+	args = append(args, d.Name)
 
 	if d.ThirdField != false {
 		query.WriteString("and third_field=$2 ")
@@ -183,7 +184,7 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 		query.WriteString("and content=$3 ")
 		d_Content, err := json.Marshal(d.Content)
 		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",d.Content, err)
+			log.Errorf("marshal(%#v) error: %s", d.Content, err)
 		}
 		args = append(args, d_Content)
 	}
@@ -203,23 +204,23 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 	}
 	defer rows.Close()
 
-    var xs []*domain.Demo
+	var xs []*domain.Demo
 	for rows.Next() {
 		var x domain.Demo
 		xs = append(xs, &x)
 
 		var x_Content []byte
-        dest := []interface{}{ &x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content }
+		dest := []interface{}{&x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content}
 
 		err = rows.Scan(dest...)
 		if err != nil {
 			log.Errorf("scan rows for query(%s, %#v) error: %s", query, args, err)
 			return nil, err
 		}
-	  	x.Content = new(domain.Demo)
+		x.Content = new(domain.Demo)
 		err = json.Unmarshal(x_Content, x.Content)
 		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",x_Content, err)
+			log.Errorf("unmarshal(%s) error: %s", x_Content, err)
 		}
 	}
 	if err = rows.Err(); err != nil {
