@@ -7,6 +7,7 @@ type Demo struct {
 	ThirdField bool
 	Status     Status
 	Content    *Demo
+	Map        map[string]Status
 }
 
 type Status int8

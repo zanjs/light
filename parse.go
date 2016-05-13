@@ -146,6 +146,7 @@ func parseExpr(vat *VarAndType, expr ast.Expr) string {
 		// ast.Print(nil, expr)
 		// structType := expr.(*ast.StructType)
 		return ""
+
 	case *ast.MapType:
 		mapType := expr.(*ast.MapType)
 		k := mapType.Key.(*ast.Ident).Name
@@ -168,7 +169,6 @@ func getDoc(g *ast.CommentGroup) (doc string) {
 		text = strings.TrimSpace(text)
 		doc += " " + text
 	}
-
 	return doc[1:]
 }
 
@@ -216,7 +216,7 @@ func parseStruct(itf *Interface, vat *VarAndType) {
 		prop.Type = parseExpr(&prop, f.Type)
 		prop.Scope = vat.Var
 		prop.Concat = "."
-		if prop.Package == "" && !isBuiltin(prop.Type) {
+		if prop.Package == "" && !isBuiltin(prop.Type) && !strings.HasPrefix(prop.Type, "map") {
 			prop.Package = vat.Package
 			prop.Path = vat.Path
 
@@ -235,7 +235,7 @@ func parseStruct(itf *Interface, vat *VarAndType) {
 }
 
 func isBuiltin(typ string) bool {
-	if typ == "" {
+	if typ == "" || strings.HasPrefix(typ, "map") {
 		return false
 	}
 	if 'a' <= typ[0] && typ[0] <= 'z' {

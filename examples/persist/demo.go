@@ -35,7 +35,7 @@ type DemoPersister interface {
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
 	//   [?{len(statuses) != 0} and status=any(${statuses}::integer[]) ]
-	Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) (int, error)
+	Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) (int64, error)
 
 	// select id, name, third_field, status, content
 	// from demos

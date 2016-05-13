@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -142,7 +141,7 @@ func calcFragment(m *Method, sql string) {
 	}
 }
 
-var placeholderRegexp = regexp.MustCompile(`\s*\$\{(.+?)\}\s*`)
+var placeholderRegexp = regexp.MustCompile(`\$\{(.+?)\}`)
 
 func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment) {
 	sql = strings.TrimSpace(sql)
@@ -173,7 +172,7 @@ func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment)
 
 		//= select ... from demos where id < $1
 		*dollar++
-		fm.Stmt += "$" + strconv.Itoa(*dollar)
+		fm.Stmt += "$%d"
 		fm.Args = append(fm.Args, vt)
 
 		before = group[1]
@@ -230,7 +229,10 @@ func calcScans(m *Method, sql string) {
 		return
 
 	case MethodTypeGet, MethodTypeList:
-		start, end = 6, strings.Index(sql, " from ")
+		start, end = 6, strings.LastIndex(sql, " from ")
+		if end == -1 {
+			panic("sql error: from not found")
+		}
 
 	case MethodTypeAdd, MethodTypeModify, MethodTypeRemove:
 		ret = m.Params
@@ -253,6 +255,7 @@ next:
 	for _, f := range fields {
 		// abc_def => AbcDef
 		f := strings.TrimSpace(f)
+		f = f[strings.LastIndex(f, " ")+1:]
 		f = strings.Replace(f, "_", " ", -1)
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
@@ -280,6 +283,9 @@ func calcMarshals(m *Method) {
 			if isBuiltin(prop.Type) {
 				continue
 			}
+
+			prop.Marshal = true
+
 			prop.Concat = "_"
 
 			tmp := *prop

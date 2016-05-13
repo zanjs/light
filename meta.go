@@ -22,6 +22,7 @@ type VarAndType struct {
 	SQLIn bool // status in(${statuses})
 
 	Type    string // Demo
+	Marshal bool   // must marshal
 	Alias   string // type Status int8
 	Slice   string // []
 	Star    string // *
