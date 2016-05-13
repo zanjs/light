@@ -146,6 +146,11 @@ func parseExpr(vat *VarAndType, expr ast.Expr) string {
 		// ast.Print(nil, expr)
 		// structType := expr.(*ast.StructType)
 		return ""
+	case *ast.MapType:
+		mapType := expr.(*ast.MapType)
+		k := mapType.Key.(*ast.Ident).Name
+		v := mapType.Value.(*ast.Ident).Name
+		return "map[" + k + "]" + v
 
 	default:
 		panic(fmt.Sprintf("unsupported type: %#v", expr))

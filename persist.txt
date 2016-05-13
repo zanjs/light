@@ -3,9 +3,9 @@
 package {{.Package}}
 
 import (
-	"fmt"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gotips/log"
 	{{- range .Imports}}
 	{{.}}{{- end }}
@@ -13,7 +13,6 @@ import (
 
 var _ = json.Marshal
 var _ = fmt.Sprintf
-var _ = sql.Open
 
 type {{ .Name }} struct{}
 
@@ -29,8 +28,8 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		query.WriteString("{{.Stmt}} ")
 {{- range $i, $vt := .Args}}
 	{{- if eq .SQLIn true}}
-		s := fmt.Sprintf("%v", {{.Scope}}{{and .Scope "."}}{{.Var}})
-		args = append(args, "{"+s[1:len(s)-1]+"}")
+		{{.Scope}}_{{.Var}} := fmt.Sprintf("%v", {{.Scope}}{{and .Scope "."}}{{.Var}})
+		args = append(args, "{"+{{.Scope}}_{{.Var}}[1:len({{.Scope}}_{{.Var}})-1]+"}")
 
 	{{- else if .Package }}
 		{{.Scope}}{{and .Scope "_"}}{{.Var}}, err := json.Marshal({{.Scope}}{{and .Scope "."}}{{.Var}})

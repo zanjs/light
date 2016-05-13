@@ -2,14 +2,21 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
-	"go/format"
 	"io/ioutil"
 	"os"
 	"text/template"
 )
 
+var db string
+
 func main() {
+
+	flag.StringVar(&db, "db", "db", "db variable to Query/QueryRow/Exec")
+
+	flag.Parse()
+
 	gofile := os.Getenv("GOFILE")
 
 	meta, err := parseFile(gofile)
@@ -38,13 +45,13 @@ func main() {
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
 
-	// ioutil.WriteFile(filename, buf.Bytes(), 0644)
+	ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
-	pretty, err := format.Source(buf.Bytes())
-	if err != nil {
-		panic(err)
-	}
-	ioutil.WriteFile(filename, pretty, 0644)
+	// pretty, err := format.Source(buf.Bytes())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// ioutil.WriteFile(filename, pretty, 0644)
 
 	pwd, _ := os.Getwd()
 	fmt.Printf("Generate file %s/%s\n", pwd, filename)

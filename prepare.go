@@ -58,7 +58,7 @@ func calcTx(ps []*VarAndType) string {
 		}
 	}
 
-	return "db"
+	return db
 }
 
 func calcInResult(m *Method, f *Func) {
@@ -139,7 +139,7 @@ func calcFragment(m *Method, sql string) {
 	}
 }
 
-var placeholderRegexp = regexp.MustCompile(`\$\{(.+?)\}`)
+var placeholderRegexp = regexp.MustCompile(`\s*\$\{(.+?)\}\s*`)
 
 func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment) {
 	sql = strings.TrimSpace(sql)
@@ -164,7 +164,7 @@ func getFragment(m *Method, sql string, cond string, dollar *int) (fm *Fragment)
 		fm.Stmt += sql[before:group[0]]
 
 		vt := calcArgs(m, fm, sql[group[2]:group[3]])
-		if vt.Slice == "[]" {
+		if vt.Slice == "[]" && strings.HasSuffix(fm.Stmt, "(") {
 			vt.SQLIn = true
 		}
 
