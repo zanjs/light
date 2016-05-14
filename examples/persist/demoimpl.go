@@ -43,12 +43,15 @@ func (*DemoPersist) Add(d *domain.Demo) ( error) {
 
 	log.Debug(stmt)
 	log.Debug(args...)
+	
 	dest := []interface{}{ &d.Id }
 	err = db.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
 		return err
 	}
+	
+
 	return nil
 }
 

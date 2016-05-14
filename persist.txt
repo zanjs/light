@@ -69,12 +69,30 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	{{- if .Unmarshals}}
 	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
 	{{- end}}
+	{{ if .Scans }}
 	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 	err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
 		return err
 	}
+	{{else}}
+	res, err := {{.Tx}}.Exec(stmt, args...)
+	if err != nil {
+		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		return err
+	}
+	a, err := res.RowsAffected()
+	if err != nil {
+		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
+		return err
+	} else if a != 1 {
+		log.Errorf("insert(%s, %#v) expected affected 1 row, but actual affected %d rows",
+			stmt, args, a)
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
+	}
+	{{end}}
+
 	return nil
 
 {{- else if .Type | eq "modify"}}
