@@ -2,8 +2,8 @@
 
 set -e
 
-# install persist
-go-bindata persist.txt
+# install gobatis
+go-bindata template.txt
 go install
 
 # use persist to generate code

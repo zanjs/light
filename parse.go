@@ -44,6 +44,7 @@ func parseFile(gofile string) (itf *Interface, err error) {
 }
 
 func parseImports(genDecl *ast.GenDecl, itf *Interface) {
+Next:
 	for _, spec := range genDecl.Specs {
 		importSpec, ok := spec.(*ast.ImportSpec)
 		if !ok {
@@ -56,6 +57,11 @@ func parseImports(genDecl *ast.GenDecl, itf *Interface) {
 		}
 		imp += importSpec.Path.Value
 
+		for _, ix := range itf.Imports {
+			if ix == imp || ix == "fmt" {
+				continue Next
+			}
+		}
 		itf.Imports = append(itf.Imports, imp)
 	}
 }

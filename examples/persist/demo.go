@@ -3,10 +3,10 @@ package persist
 import (
 	"database/sql"
 
-	"github.com/arstd/persist/examples/domain"
+	"github.com/arstd/gobatis/examples/domain"
 )
 
-//go:generate persist
+//go:generate gobatis
 
 // DemoPersister 示例接口
 type DemoPersister interface {

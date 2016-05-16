@@ -5,7 +5,7 @@ import (
 
 	"github.com/gotips/log"
 
-	m "github.com/arstd/persist/examples/domain"
+	m "github.com/arstd/gobatis/examples/domain"
 )
 
 var x DemoPersist

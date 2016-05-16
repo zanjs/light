@@ -30,11 +30,11 @@ func main() {
 	data := prepare(meta)
 	// log.JSONIndent(data)
 
-	tpl, err := Asset("persist.txt")
+	tpl, err := Asset("template.txt")
 	if err != nil {
 		panic(err)
 	}
-	t, err := template.New("persist.txt").Parse(string(tpl))
+	t, err := template.New("template.txt").Parse(string(tpl))
 	if err != nil {
 		panic(err)
 	}

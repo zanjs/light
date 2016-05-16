@@ -55,7 +55,7 @@ func prepareMethod(m *Method, f *Func) {
 
 func calcTx(ps []*VarAndType) string {
 	for _, vt := range ps {
-		if vt.Package == "Tx" {
+		if vt.Type == "Tx" {
 			return vt.Var
 		}
 	}

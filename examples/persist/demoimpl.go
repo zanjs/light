@@ -9,7 +9,7 @@ import (
 	"github.com/gotips/log"
 	"strconv"
 	"database/sql"
-	"github.com/arstd/persist/examples/domain"
+	"github.com/arstd/gobatis/examples/domain"
 )
 
 var _ = json.Marshal
@@ -86,14 +86,14 @@ func (*DemoPersist) Modify(d *domain.Demo) ( error) {
 		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
 		return err
 	}
-	a, err := res.RowsAffected()
+	_a, err := res.RowsAffected()
 	if err != nil {
 		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
 		return err
-	} else if a != 1 {
+	} else if _a != 1 {
 		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
+			stmt, args, _a)
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
 	}
 	return nil
 }
@@ -117,14 +117,14 @@ func (*DemoPersist) Remove(id int) ( error) {
 		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
 		return err
 	}
-	a, err := res.RowsAffected()
+	_a, err := res.RowsAffected()
 	if err != nil {
 		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
 		return err
-	} else if a != 1 {
+	} else if _a != 1 {
 		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", a)
+			stmt, args, _a)
+		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
 	}
 	return nil
 }
@@ -143,21 +143,23 @@ func (*DemoPersist) Get(id int) ( *domain.Demo,  error) {
 
 	log.Debug(stmt)
 	log.Debug(args...)
-	var x domain.Demo
-	var x_Content []byte
-	dest := []interface{}{ &x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content }
+	var _x domain.Demo
+	
+	var _x_Content []byte
+	
+	dest := []interface{}{ &_x.Id, &_x.Name, &_x.ThirdField, &_x.Status, &_x_Content }
 
 	err := db.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
 		return nil, err
 	}
-	x.Content = &domain.Demo{}
-		err = json.Unmarshal(x_Content, &x.Content)
+	_x.Content = &domain.Demo{}
+		err = json.Unmarshal(_x_Content, &_x.Content)
 		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",x_Content, err)
+			log.Errorf("unmarshal(%s) error: %s",_x_Content, err)
 		}
-	return &x, nil
+	return &_x, nil
 }
 
 func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) ( int64,  error) {
@@ -203,7 +205,7 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) 
 	log.Debug(stmt)
 	log.Debug(args...)
 	var count int64
-	err := db.QueryRow(stmt, args...).Scan(&count)
+	err := tx.QueryRow(stmt, args...).Scan(&count)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
 		return 0, err
@@ -253,7 +255,7 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 
 	log.Debug(stmt)
 	log.Debug(args...)
-	rows, err := db.Query(stmt, args...)
+	rows, err := tx.Query(stmt, args...)
 	if err != nil {
 		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
 		return nil, err
@@ -262,21 +264,23 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 
     var xs []*domain.Demo
 	for rows.Next() {
-		var x domain.Demo
-		xs = append(xs, &x)
+		var _x domain.Demo
+		xs = append(xs, &_x)
 
-		var x_Content []byte
-        dest := []interface{}{ &x.Id, &x.Name, &x.ThirdField, &x.Status, &x_Content }
+		
+		var _x_Content []byte
+		
+        dest := []interface{}{ &_x.Id, &_x.Name, &_x.ThirdField, &_x.Status, &_x_Content }
 
 		err = rows.Scan(dest...)
 		if err != nil {
 			log.Errorf("scan rows for query(%s, %#v) error: %s", stmt, args, err)
 			return nil, err
 		}
-		x.Content = &domain.Demo{}
-		err = json.Unmarshal(x_Content, &x.Content)
+		_x.Content = &domain.Demo{}
+		err = json.Unmarshal(_x_Content, &_x.Content)
 		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",x_Content, err)
+			log.Errorf("unmarshal(%s) error: %s",_x_Content, err)
 		}
 	}
 	if err = rows.Err(); err != nil {
