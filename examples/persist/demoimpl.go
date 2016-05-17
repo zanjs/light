@@ -47,7 +47,9 @@ func (*DemoPersist) Add(d *domain.Demo) ( error) {
 	dest := []interface{}{ &d.Id }
 	err = db.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	
@@ -83,17 +85,23 @@ func (*DemoPersist) Modify(d *domain.Demo) ( error) {
 	log.Debug(args...)
 	res, err := db.Exec(stmt, args...)
 	if err != nil {
-		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	_a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	} else if _a != 1 {
-		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, _a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
+		return err
 	}
 	return nil
 }
@@ -114,17 +122,22 @@ func (*DemoPersist) Remove(id int) ( error) {
 	log.Debug(args...)
 	res, err := db.Exec(stmt, args...)
 	if err != nil {
-		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	_a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	} else if _a != 1 {
-		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, _a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
+		return err
 	}
 	return nil
 }
@@ -151,13 +164,17 @@ func (*DemoPersist) Get(id int) ( *domain.Demo,  error) {
 
 	err := db.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 	_x.Content = &domain.Demo{}
 		err = json.Unmarshal(_x_Content, &_x.Content)
 		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",_x_Content, err)
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
 		}
 	return &_x, nil
 }
@@ -207,7 +224,9 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) 
 	var count int64
 	err := tx.QueryRow(stmt, args...).Scan(&count)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return 0, err
 	}
 	return count, nil
@@ -257,7 +276,9 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 	log.Debug(args...)
 	rows, err := tx.Query(stmt, args...)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 	defer rows.Close()
@@ -274,7 +295,9 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 
 		err = rows.Scan(dest...)
 		if err != nil {
-			log.Errorf("scan rows for query(%s, %#v) error: %s", stmt, args, err)
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
 			return nil, err
 		}
 		_x.Content = &domain.Demo{}
@@ -284,7 +307,9 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, p
 		}
 	}
 	if err = rows.Err(); err != nil {
-		log.Errorf("scan rows for query(%s, %#v) last error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 	return xs, nil

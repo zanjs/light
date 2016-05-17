@@ -73,23 +73,31 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 	err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	{{else}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
 	if err != nil {
-		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	_a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("insert(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	} else if _a != 1 {
-		log.Errorf("insert(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, _a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
+		return err
 	}
 	{{end}}
 
@@ -98,34 +106,45 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 {{- else if .Type | eq "modify"}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
 	if err != nil {
-		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	_a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("update(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	} else if _a != 1 {
-		log.Errorf("update(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, _a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
+		return err
 	}
 	return nil
 
 {{- else if .Type | eq "remove"}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
 	if err != nil {
-		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	}
 	_a, err := res.RowsAffected()
 	if err != nil {
-		log.Errorf("delete(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return err
 	} else if _a != 1 {
-		log.Errorf("delete(%s, %#v) expected affected 1 row, but actual affected %d rows",
-			stmt, args, _a)
-		return fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
+		return err
 	}
 	return nil
 
@@ -138,7 +157,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 
 	err := {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 
@@ -146,7 +167,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}} = {{.Slice}}{{if .Slice}}{{.Star}}{{else}}{{and .Star "&"}}{{end}}{{.Package}}{{and .Package "."}}{{.Type}}{}
 		err = json.Unmarshal({{or .Scope "_x"}}{{.Concat}}{{.Var}}, &{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}})
 		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",{{or .Scope "_x"}}{{.Concat}}{{.Var}}, err)
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
 		}
 	{{- end}}
 	return &_x, nil
@@ -155,7 +178,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	var count int64
 	err := {{.Tx}}.QueryRow(stmt, args...).Scan(&count)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return 0, err
 	}
 	return count, nil
@@ -163,7 +188,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 {{- else if .Type | eq "list"}}
 	rows, err := {{.Tx}}.Query(stmt, args...)
 	if err != nil {
-		log.Errorf("query(%s, %#v) error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 	defer rows.Close()
@@ -180,7 +207,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 
 		err = rows.Scan(dest...)
 		if err != nil {
-			log.Errorf("scan rows for query(%s, %#v) error: %s", stmt, args, err)
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
 			return nil, err
 		}
 
@@ -193,7 +222,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		{{- end}}
 	}
 	if err = rows.Err(); err != nil {
-		log.Errorf("scan rows for query(%s, %#v) last error: %s", stmt, args, err)
+		log.Error(err)
+		log.Error(stmt)
+		log.Error(args...)
 		return nil, err
 	}
 	return xs, nil
