@@ -155,8 +155,8 @@ func parseExpr(vat *VarAndType, expr ast.Expr) string {
 
 	case *ast.MapType:
 		mapType := expr.(*ast.MapType)
-		k := mapType.Key.(*ast.Ident).Name
-		v := mapType.Value.(*ast.Ident).Name
+		k := parseExpr(&VarAndType{}, mapType.Key)
+		v := parseExpr(&VarAndType{}, mapType.Value)
 		return "map[" + k + "]" + v
 
 	default:
@@ -200,7 +200,7 @@ func parseStruct(itf *Interface, vat *VarAndType) {
 
 	fillTypePath(itf, vat)
 
-	typeSpec := getTypeSpec(vat.Path, vat.Type)
+	typeSpec := getTypeSpec(itf, vat.Path, vat.Type)
 
 	stype, ok := typeSpec.Type.(*ast.StructType)
 	if !ok {
@@ -222,11 +222,16 @@ func parseStruct(itf *Interface, vat *VarAndType) {
 		prop.Type = parseExpr(&prop, f.Type)
 		prop.Scope = vat.Var
 		prop.Concat = "."
-		if prop.Package == "" && !isBuiltin(prop.Type) && !strings.HasPrefix(prop.Type, "map") {
-			prop.Package = vat.Package
-			prop.Path = vat.Path
 
-			typeSpec := getTypeSpec(prop.Path, prop.Type)
+		if !isBuiltin(prop.Type) && !strings.HasPrefix(prop.Type, "map") {
+			if prop.Package == "" {
+				prop.Package = vat.Package
+				prop.Path = vat.Path
+			} else {
+				fillTypePath(itf, &prop)
+			}
+
+			typeSpec := getTypeSpec(itf, prop.Path, prop.Type)
 			typ := parseExpr(vat, typeSpec.Type)
 			if typ != "" && isBuiltin(typ) {
 				prop.Alias = typ
@@ -272,7 +277,7 @@ func fillTypePath(itf *Interface, vat *VarAndType) {
 	}
 }
 
-func getTypeSpec(path, name string) (typeSpec *ast.TypeSpec) {
+func getTypeSpec(itf *Interface, path, name string) (typeSpec *ast.TypeSpec) {
 	pkg, _ := build.Import(path, "", 0)
 	fset := token.NewFileSet() // share one fset across the whole package
 	for _, file := range pkg.GoFiles {
@@ -285,9 +290,15 @@ func getTypeSpec(path, name string) (typeSpec *ast.TypeSpec) {
 
 		for _, decl := range f.Decls {
 			decl, ok := decl.(*ast.GenDecl)
+			if ok && decl.Tok == token.IMPORT {
+				parseImports(decl, itf)
+				continue
+			}
+
 			if !ok || decl.Tok != token.TYPE {
 				continue
 			}
+
 			for _, spec := range decl.Specs {
 				spec := spec.(*ast.TypeSpec)
 				if spec.Name.Name != name {

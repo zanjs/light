@@ -1,20 +1,16 @@
 package domain
 
+import "github.com/arstd/gobatis/examples/enums"
+
 // Demo 示例结构体
 type Demo struct {
 	Id         int
 	Name       string
 	ThirdField bool
-	Status     Status
+	Status     enums.Status
 	Content    *Demo
-	Map        map[string]Status
+	Map        map[string]string
 }
-
-type Status int8
-
-const (
-	StatusNormal Status = 1
-)
 
 /*
 create table demos (

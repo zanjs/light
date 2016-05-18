@@ -11,9 +11,14 @@ func prepare(itf *Interface) (impl *Implement) {
 	impl.Source = os.Getenv("GOFILE")
 	impl.Package = os.Getenv("GOPACKAGE")
 
-	impl.Imports = itf.Imports
 	if path != "" {
-		impl.Imports = append(impl.Imports, path)
+		itf.Imports = append(impl.Imports, path)
+	}
+	for _, imp := range itf.Imports {
+		if imp == "fmt" || imp == "encoding/json" || imp == "strconv" {
+			continue
+		}
+		impl.Imports = append(impl.Imports, imp)
 	}
 
 	impl.Name = itf.Name
@@ -281,6 +286,9 @@ func calcMarshals(m *Method) {
 	for _, fm := range m.Fragments {
 		for _, prop := range fm.Args {
 			if isBuiltin(prop.Type) {
+				continue
+			}
+			if prop.Alias != "" {
 				continue
 			}
 

@@ -21,6 +21,7 @@ type {{ .Name }} struct{}
 {{- range .Methods }}
 
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) ({{range $i,$vt := .Returns}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) {
+	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 
 {{- range .Fragments}}
@@ -155,7 +156,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	{{ end }}
 	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
 
-	err := {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
+	err ={{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
 	if err != nil {
 		log.Error(err)
 		log.Error(stmt)
@@ -176,7 +177,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 
 {{- else if .Type | eq "count"}}
 	var count int64
-	err := {{.Tx}}.QueryRow(stmt, args...).Scan(&count)
+	err = {{.Tx}}.QueryRow(stmt, args...).Scan(&count)
 	if err != nil {
 		log.Error(err)
 		log.Error(stmt)

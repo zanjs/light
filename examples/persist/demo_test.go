@@ -6,6 +6,7 @@ import (
 	"github.com/gotips/log"
 
 	m "github.com/arstd/gobatis/examples/domain"
+	e "github.com/arstd/gobatis/examples/enums"
 )
 
 var x DemoPersist
@@ -15,7 +16,7 @@ func TestDemoPersisterAdd(t *testing.T) {
 	d := &m.Demo{
 		Name:       "Name",
 		ThirdField: true,
-		Status:     m.StatusNormal,
+		Status:     e.StatusNormal,
 		Content:    &m.Demo{},
 	}
 
@@ -32,7 +33,7 @@ func TestDemoPersisterUpdate(t *testing.T) {
 		Id:         id,
 		Name:       "Name_updated",
 		ThirdField: true,
-		Status:     m.StatusNormal,
+		Status:     e.StatusNormal,
 		Content:    &m.Demo{},
 	}
 
@@ -57,13 +58,13 @@ func TestDemoPersisterList(t *testing.T) {
 		Id:         1,
 		Name:       "Name",
 		ThirdField: true,
-		Status:     m.StatusNormal,
+		Status:     e.StatusNormal,
 		Content:    &m.Demo{},
 	}
 	log.JSON(d.Content)
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
-	mts, err := x.List(tx, d, []m.Status{m.StatusNormal}, 1, 9999)
+	mts, err := x.List(tx, d, []e.Status{e.StatusNormal}, 1, 9999)
 	CommitTx(tx)
 
 	if err != nil {
@@ -78,13 +79,13 @@ func TestDemoPersisterCount(t *testing.T) {
 		Id:         1,
 		Name:       "Name",
 		ThirdField: true,
-		Status:     m.StatusNormal,
+		Status:     e.StatusNormal,
 		Content:    &m.Demo{},
 	}
 	log.JSON(d.Content)
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
-	count, err := x.Count(tx, d, []m.Status{m.StatusNormal})
+	count, err := x.Count(tx, d, []e.Status{e.StatusNormal})
 	CommitTx(tx)
 
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/arstd/gobatis/examples/domain"
+	"github.com/arstd/gobatis/examples/enums"
 )
 
 //go:generate gobatis
@@ -35,7 +36,7 @@ type DemoPersister interface {
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
 	//   [?{len(statuses) != 0} and status=any(${statuses}::integer[]) ]
-	Count(tx *sql.Tx, d *domain.Demo, statuses []domain.Status) (int64, error)
+	Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (int64, error)
 
 	// select id, name, third_field, status, content
 	// from demos
@@ -43,5 +44,5 @@ type DemoPersister interface {
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
 	//   [?{len(statuses) != 0} and status=any(${statuses}::integer[]) ]
-	List(tx *sql.Tx, d *domain.Demo, statuses []domain.Status, page, size int) ([]*domain.Demo, error)
+	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
 }

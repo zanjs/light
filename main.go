@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
+	"go/format"
 	"io/ioutil"
 	"os"
 	"text/template"
@@ -20,6 +22,9 @@ func main() {
 	}
 
 	gofile := os.Getenv("GOFILE")
+
+	filename := gofile[:len(gofile)-3] + "impl.go"
+	os.Remove(filename)
 
 	meta, err := parseFile(gofile)
 	if err != nil {
@@ -45,16 +50,14 @@ func main() {
 		panic(err)
 	}
 
-	filename := gofile[:len(gofile)-3] + "impl.go"
+	// ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
-	ioutil.WriteFile(filename, buf.Bytes(), 0644)
+	pretty, err := format.Source(buf.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	ioutil.WriteFile(filename, pretty, 0644)
 
-	// pretty, err := format.Source(buf.Bytes())
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// ioutil.WriteFile(filename, pretty, 0644)
-	//
-	// pwd, _ := os.Getwd()
-	// fmt.Printf("Generate file %s/%s\n", pwd, filename)
+	pwd, _ := os.Getwd()
+	fmt.Printf("Generate file %s/%s\n", pwd, filename)
 }
