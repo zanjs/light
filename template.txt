@@ -50,7 +50,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		args = append(args, {{.Scope}}{{and .Scope "_"}}{{.Var}})
 
 	{{- else }}
-		args = append(args, {{$vt.Scope}}{{and .Scope "."}}{{$vt.Var}})
+		args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}{{$vt.Scope}}{{and .Scope "."}}{{$vt.Var}}{{and $vt.Alias ")"}})
 	{{- end }}
 {{- end }}
 	{{- if .Cond}}

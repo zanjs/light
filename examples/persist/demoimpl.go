@@ -7,11 +7,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strconv"
-
 	"github.com/arstd/gobatis/examples/domain"
 	"github.com/arstd/gobatis/examples/enums"
 	"github.com/gotips/log"
+	"strconv"
 )
 
 var _ = json.Marshal
@@ -27,7 +26,7 @@ func (*DemoPersist) Add(d *domain.Demo) error {
 	query.WriteString("insert into demos(name, third_field, status, content) values($%d, $%d, $%d, $%d) returning id ")
 	args = append(args, d.Name)
 	args = append(args, d.ThirdField)
-	args = append(args, d.Status)
+	args = append(args, int8(d.Status))
 	d_Content, err := json.Marshal(d.Content)
 	if err != nil {
 		log.Errorf("marshal(%#v) error: %s", d.Content, err)
@@ -62,7 +61,7 @@ func (*DemoPersist) Modify(d *domain.Demo) error {
 	query.WriteString("update demos set name=$%d, third_field=$%d, status=$%d, content=$%d where id=$%d ")
 	args = append(args, d.Name)
 	args = append(args, d.ThirdField)
-	args = append(args, d.Status)
+	args = append(args, int8(d.Status))
 	d_Content, err := json.Marshal(d.Content)
 	if err != nil {
 		log.Errorf("marshal(%#v) error: %s", d.Content, err)
