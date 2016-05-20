@@ -7,10 +7,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	"github.com/arstd/gobatis/examples/domain"
 	"github.com/arstd/gobatis/examples/enums"
 	"github.com/gotips/log"
-	"strconv"
 )
 
 var _ = json.Marshal
@@ -218,15 +219,15 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (
 
 	log.Debug(stmt)
 	log.Debug(args...)
-	var count int64
-	err = tx.QueryRow(stmt, args...).Scan(&count)
+	var _x int64
+	err = tx.QueryRow(stmt, args...).Scan(&_x)
 	if err != nil {
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
 		return 0, err
 	}
-	return count, nil
+	return _x, nil
 }
 
 func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page int, size int) ([]*domain.Demo, error) {

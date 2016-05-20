@@ -12,7 +12,7 @@ func prepare(itf *Interface) (impl *Implement) {
 	impl.Package = os.Getenv("GOPACKAGE")
 
 	if path != "" {
-		itf.Imports = append(impl.Imports, path)
+		itf.Imports = append(itf.Imports, path)
 	}
 	for _, imp := range itf.Imports {
 		if imp == "fmt" || imp == "encoding/json" || imp == "strconv" {
@@ -99,6 +99,8 @@ func getMethodType(sql string, f *Func) MethodType {
 			countSQL := sql[strings.Index(sql, " "):]
 			countSQL = strings.TrimSpace(countSQL)
 			if strings.HasPrefix(countSQL, "count") {
+				return MethodTypeCount
+			} else if strings.HasPrefix(countSQL, "sum") {
 				return MethodTypeCount
 			}
 

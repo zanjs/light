@@ -176,15 +176,15 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	return &_x, nil
 
 {{- else if .Type | eq "count"}}
-	var count int64
-	err = {{.Tx}}.QueryRow(stmt, args...).Scan(&count)
+	var _x {{range $i, $r := .Returns}}{{if eq $i 0}}{{.Type}}{{end}}{{end}}
+	err = {{.Tx}}.QueryRow(stmt, args...).Scan(&_x)
 	if err != nil {
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
 		return 0, err
 	}
-	return count, nil
+	return _x, nil
 
 {{- else if .Type | eq "list"}}
 	rows, err := {{.Tx}}.Query(stmt, args...)
