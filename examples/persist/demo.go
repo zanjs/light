@@ -35,7 +35,7 @@ type DemoPersister interface {
 	// where name=${d.Name}
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
-	//   [?{len(statuses) != 0} and status=any(${statuses}::integer[]) ]
+	//   [?{len(statuses) != 0} and status in (${statuses}) ]
 	Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (int64, error)
 
 	// select id, name, third_field, status, content
@@ -43,6 +43,6 @@ type DemoPersister interface {
 	// where name=${d.Name}
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
-	//   [?{len(statuses) != 0} and status=any(${statuses}::integer[]) ]
+	//   [?{len(statuses) != 0} and status in (${statuses}) ]
 	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
 }

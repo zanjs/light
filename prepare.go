@@ -293,6 +293,9 @@ func calcMarshals(m *Method) {
 			if prop.Alias != "" {
 				continue
 			}
+			if prop.Type == "Time" && prop.Package == "time" {
+				continue
+			}
 
 			prop.Marshal = true
 

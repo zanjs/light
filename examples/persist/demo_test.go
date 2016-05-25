@@ -85,7 +85,7 @@ func TestDemoPersisterCount(t *testing.T) {
 	log.JSON(d.Content)
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
-	count, err := x.Count(tx, d, []e.Status{e.StatusNormal})
+	count, err := x.Count(tx, d, []e.Status{e.StatusNormal, e.StatusNormal, e.StatusNormal})
 	CommitTx(tx)
 
 	if err != nil {

@@ -7,11 +7,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strconv"
-
 	"github.com/arstd/gobatis/examples/domain"
 	"github.com/arstd/gobatis/examples/enums"
 	"github.com/gotips/log"
+	"strconv"
+	"strings"
 )
 
 var _ = json.Marshal
@@ -23,8 +23,9 @@ type DemoPersist struct{}
 func (*DemoPersist) Add(d *domain.Demo) error {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("insert into demos(name, third_field, status, content) values($%d, $%d, $%d, $%d) returning id ")
+	stmt = "insert into demos(name, third_field, status, content) values($%d, $%d, $%d, $%d) returning id "
 	args = append(args, d.Name)
 	args = append(args, d.ThirdField)
 	args = append(args, int8(d.Status))
@@ -33,12 +34,13 @@ func (*DemoPersist) Add(d *domain.Demo) error {
 		log.Errorf("marshal(%#v) error: %s", d.Content, err)
 	}
 	args = append(args, d_Content)
+	query.WriteString(stmt)
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
@@ -58,8 +60,9 @@ func (*DemoPersist) Add(d *domain.Demo) error {
 func (*DemoPersist) Modify(d *domain.Demo) error {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("update demos set name=$%d, third_field=$%d, status=$%d, content=$%d where id=$%d ")
+	stmt = "update demos set name=$%d, third_field=$%d, status=$%d, content=$%d where id=$%d "
 	args = append(args, d.Name)
 	args = append(args, d.ThirdField)
 	args = append(args, int8(d.Status))
@@ -69,12 +72,13 @@ func (*DemoPersist) Modify(d *domain.Demo) error {
 	}
 	args = append(args, d_Content)
 	args = append(args, d.Id)
+	query.WriteString(stmt)
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
@@ -104,15 +108,17 @@ func (*DemoPersist) Modify(d *domain.Demo) error {
 func (*DemoPersist) Remove(id int) error {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("delete from demos where id=$%d ")
+	stmt = "delete from demos where id=$%d "
 	args = append(args, id)
+	query.WriteString(stmt)
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
@@ -141,15 +147,17 @@ func (*DemoPersist) Remove(id int) error {
 func (*DemoPersist) Get(id int) (*domain.Demo, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("select id, name, third_field, status, content from demos where id=$%d ")
+	stmt = "select id, name, third_field, status, content from demos where id=$%d "
 	args = append(args, id)
+	query.WriteString(stmt)
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
@@ -179,43 +187,43 @@ func (*DemoPersist) Get(id int) (*domain.Demo, error) {
 func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (int64, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("select count(id) from demos where name=$%d ")
+	stmt = "select count(id) from demos where name=$%d "
 	args = append(args, d.Name)
+	query.WriteString(stmt)
 
 	if d.ThirdField != false {
-		query.WriteString("and third_field=$%d ")
+		stmt = "and third_field=$%d "
 		args = append(args, d.ThirdField)
+		query.WriteString(stmt)
 	}
 
 	if d.Content != nil {
-		query.WriteString("and content=$%d ")
+		stmt = "and content=$%d "
 		d_Content, err := json.Marshal(d.Content)
 		if err != nil {
 			log.Errorf("marshal(%#v) error: %s", d.Content, err)
 		}
 		args = append(args, d_Content)
+		query.WriteString(stmt)
 	}
 
 	if len(statuses) != 0 {
-		query.WriteString("and status=any($%d::integer[]) ")
-		arr := "{"
-		for i, v := range statuses {
-			if i > 0 {
-				arr += ","
-			}
-			arr += strconv.Itoa(int(v))
+		stmt = "and status in ($%d) "
+		for _, v := range statuses {
+			args = append(args, int8(v))
 		}
-		arr += "}"
-
-		args = append(args, arr)
+		stmt = strings.Replace(stmt, "$%d",
+			strings.Repeat(",$%d", len(statuses))[1:], -1)
+		query.WriteString(stmt)
 	}
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
@@ -233,43 +241,43 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (
 func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page int, size int) ([]*domain.Demo, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
+	var stmt string
 
-	query.WriteString("select id, name, third_field, status, content from demos where name=$%d ")
+	stmt = "select id, name, third_field, status, content from demos where name=$%d "
 	args = append(args, d.Name)
+	query.WriteString(stmt)
 
 	if d.ThirdField != false {
-		query.WriteString("and third_field=$%d ")
+		stmt = "and third_field=$%d "
 		args = append(args, d.ThirdField)
+		query.WriteString(stmt)
 	}
 
 	if d.Content != nil {
-		query.WriteString("and content=$%d ")
+		stmt = "and content=$%d "
 		d_Content, err := json.Marshal(d.Content)
 		if err != nil {
 			log.Errorf("marshal(%#v) error: %s", d.Content, err)
 		}
 		args = append(args, d_Content)
+		query.WriteString(stmt)
 	}
 
 	if len(statuses) != 0 {
-		query.WriteString("and status=any($%d::integer[]) ")
-		arr := "{"
-		for i, v := range statuses {
-			if i > 0 {
-				arr += ","
-			}
-			arr += strconv.Itoa(int(v))
+		stmt = "and status in ($%d) "
+		for _, v := range statuses {
+			args = append(args, int8(v))
 		}
-		arr += "}"
-
-		args = append(args, arr)
+		stmt = strings.Replace(stmt, "$%d",
+			strings.Repeat(",$%d", len(statuses))[1:], -1)
+		query.WriteString(stmt)
 	}
 
 	var dollar []interface{}
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)

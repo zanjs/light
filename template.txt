@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gotips/log"
 	"strconv"
+	"strings"
 	{{- range .Imports}}
 	{{.}}{{- end }}
 )
@@ -23,24 +24,19 @@ type {{ .Name }} struct{}
 func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) ({{range $i,$vt := .Returns}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
-
+	var stmt string
 {{- range .Fragments}}
 {{if .Cond }}
 	if {{.Cond}} {
 {{- end}}
-		query.WriteString("{{.Stmt}} ")
+	stmt = "{{.Stmt}} "
 {{- range $i, $vt := .Args}}
 	{{- if eq .SQLIn true}}
-		arr := "{"
-		for i, v := range {{.Scope}}{{and .Scope "."}}{{.Var}} {
-			if i > 0 {
-				arr += ","
-			}
-			arr += strconv.Itoa(int(v))
+		for _, v := range {{.Scope}}{{and .Scope "."}}{{$vt.Var}} {
+			args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}{{$vt.Scope}}{{and .Scope "."}}v{{and $vt.Alias ")"}})
 		}
-		arr += "}"
-
-		args = append(args, arr)
+		stmt = strings.Replace(stmt, "$%d",
+			strings.Repeat(",$%d", len({{.Scope}}{{and .Scope "."}}{{.Var}}))[1:], -1)
 
 	{{- else if .Marshal }}
 		{{.Scope}}{{and .Scope "_"}}{{.Var}}, err := json.Marshal({{.Scope}}{{and .Scope "."}}{{.Var}})
@@ -53,6 +49,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}{{$vt.Scope}}{{and .Scope "."}}{{$vt.Var}}{{and $vt.Alias ")"}})
 	{{- end }}
 {{- end }}
+	query.WriteString(stmt)
 	{{- if .Cond}}
 	}{{end}}
 {{- end}}
@@ -61,7 +58,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 	for i := range args {
 		dollar = append(dollar, i+1)
 	}
-	stmt := fmt.Sprintf(query.String(), dollar...)
+	stmt = fmt.Sprintf(query.String(), dollar...)
 
 	log.Debug(stmt)
 	log.Debug(args...)
