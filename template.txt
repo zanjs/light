@@ -76,30 +76,17 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		log.Error(args...)
 		return err
 	}
+	return nil
 	{{else}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
 	if err != nil {
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
-		return err
+		return 0, err
 	}
-	_a, err := res.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	} else if _a != 1 {
-		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
+	return res.RowsAffected()
 	{{end}}
-
-	return nil
 
 {{- else if .Type | eq "modify"}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
@@ -107,22 +94,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
-		return err
+		return 0, err
 	}
-	_a, err := res.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	} else if _a != 1 {
-		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
-	return nil
+	return res.RowsAffected()
 
 {{- else if .Type | eq "remove"}}
 	res, err := {{.Tx}}.Exec(stmt, args...)
@@ -130,21 +104,9 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
-		return err
+		return 0, err
 	}
-	_a, err := res.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	} else if _a != 1 {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
-	return nil
+	return res.RowsAffected()
 
 {{- else if .Type | eq "get"}}
 	var _x {{.Result.Package}}{{and .Result.Package "."}}{{.Result.Type}}

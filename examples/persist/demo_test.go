@@ -37,9 +37,12 @@ func TestDemoPersisterUpdate(t *testing.T) {
 		Content:    &m.Demo{},
 	}
 
-	err := x.Modify(d)
+	a, err := x.Modify(d)
 	if err != nil {
 		t.Fatalf("update %#v error: %s", d, err)
+	}
+	if a != 1 {
+		t.Fatalf("expect to affect 1 row, but actual %d row(s)", a)
 	}
 }
 
@@ -96,8 +99,11 @@ func TestDemoPersisterCount(t *testing.T) {
 }
 
 func TestDemoPersisterRemove(t *testing.T) {
-	err := x.Remove(id)
+	a, err := x.Remove(id)
 	if err != nil {
 		t.Fatalf("delete by Id=%d error: %s", id, err)
+	}
+	if a != 1 {
+		t.Fatalf("expect to affect 1 row, but actual %d row(s)", a)
 	}
 }

@@ -21,10 +21,10 @@ type DemoPersister interface {
 	// set name=${d.Name}, third_field=${d.ThirdField},
 	//   status=${d.Status}, content=${d.Content}
 	// where id=${d.Id}
-	Modify(d *domain.Demo) error
+	Modify(d *domain.Demo) (int64, error)
 
 	// delete from demos where id=${id}
-	Remove(id int) error
+	Remove(id int) (int64, error)
 
 	// select id, name, third_field, status, content
 	// from demos where id=${id}

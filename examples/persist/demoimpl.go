@@ -53,11 +53,11 @@ func (*DemoPersist) Add(d *domain.Demo) error {
 		log.Error(args...)
 		return err
 	}
-
 	return nil
+
 }
 
-func (*DemoPersist) Modify(d *domain.Demo) error {
+func (*DemoPersist) Modify(d *domain.Demo) (int64, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 	var stmt string
@@ -87,25 +87,12 @@ func (*DemoPersist) Modify(d *domain.Demo) error {
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
-		return err
+		return 0, err
 	}
-	_a, err := res.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	} else if _a != 1 {
-		err = fmt.Errorf("expected affected 1 row, but actual affected %d rows", _a)
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
-	return nil
+	return res.RowsAffected()
 }
 
-func (*DemoPersist) Remove(id int) error {
+func (*DemoPersist) Remove(id int) (int64, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 	var stmt string
@@ -127,21 +114,9 @@ func (*DemoPersist) Remove(id int) error {
 		log.Error(err)
 		log.Error(stmt)
 		log.Error(args...)
-		return err
+		return 0, err
 	}
-	_a, err := res.RowsAffected()
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	} else if _a != 1 {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
-	return nil
+	return res.RowsAffected()
 }
 
 func (*DemoPersist) Get(id int) (*domain.Demo, error) {
