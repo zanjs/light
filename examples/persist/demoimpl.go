@@ -7,16 +7,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/arstd/gobatis/examples/domain"
 	"github.com/arstd/gobatis/examples/enums"
 	"github.com/gotips/log"
-	"strconv"
-	"strings"
 )
-
-var _ = json.Marshal
-var _ = fmt.Sprintf
-var _ = strconv.Itoa
 
 type DemoPersist struct{}
 

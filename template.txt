@@ -13,10 +13,6 @@ import (
 	{{.}}{{- end }}
 )
 
-var _ = json.Marshal
-var _ = fmt.Sprintf
-var _ = strconv.Itoa
-
 type {{ .Name }} struct{}
 
 {{- range .Methods }}

@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"text/template"
 )
 
@@ -60,4 +61,10 @@ func main() {
 
 	pwd, _ := os.Getwd()
 	fmt.Printf("Generate file %s/%s\n", pwd, filename)
+
+	cmd := exec.Command("goimports", "-w", pwd+"/"+filename)
+	err = cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 }

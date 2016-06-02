@@ -15,7 +15,7 @@ func prepare(itf *Interface) (impl *Implement) {
 		itf.Imports = append(itf.Imports, path)
 	}
 	for _, imp := range itf.Imports {
-		if imp == "fmt" || imp == "encoding/json" || imp == "strconv" {
+		if imp == "fmt" || imp == `fmt "fmt"` || imp == "encoding/json" || imp == "strconv" {
 			continue
 		}
 		impl.Imports = append(impl.Imports, imp)
