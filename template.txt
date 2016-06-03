@@ -29,7 +29,7 @@ func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{
 {{- range $i, $vt := .Args}}
 	{{- if eq .SQLIn true}}
 		for _, v := range {{.Scope}}{{and .Scope "."}}{{$vt.Var}} {
-			args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}{{$vt.Scope}}{{and .Scope "."}}v{{and $vt.Alias ")"}})
+			args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}v{{and $vt.Alias ")"}})
 		}
 		stmt = strings.Replace(stmt, "$%d",
 			strings.Repeat(",$%d", len({{.Scope}}{{and .Scope "."}}{{.Var}}))[1:], -1)
