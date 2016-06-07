@@ -1,7 +1,7 @@
-Gobatis
-======================================
+gobatis
+================================================================================
 
-根据接口和 SQL 生成数据库 CRUD 方法
+根据接口和 SQL 生成数据库 CRUD 实现方法
 
 
 支持 6 种操作
@@ -12,32 +12,51 @@ Gobatis
 * remove: delete from table where id=1
 * get: select id,name from table where id=1
 * list: select id,name from table where id < 1000 offset 10 limit 5
-* count: select count(id) from table where id < 1000
+* count/sum: select count(id) from table where id < 1000
 
 
-需要解决的问题
+Usage
 --------------------------------------------------------------------------------
 
-* 解析包（或者文件）中所有的接口、接口中方法、方法中的参数和返回值
-* 处理参数和返回值类型，如果是结构体，深入解析结构体的属性类型
-* 如果结构体属性类型没有包名（和当前结构体在同一个包中），要得到包名
-* 模板文件
-* 如果 SQL 参数为空，无需定义变量，返回值同理
-* 返回类型可以没有变量名
+1. 编写接口
+
+    ```go
+    package persist
+
+    //go:generate gobatis
+
+    // DemoPersister 示例接口
+    type DemoPersister interface {
+
+    	// select id, name, third_field, status, content
+    	// from demos
+    	// where name=${d.Name}
+    	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
+    	//   [?{d.Content != nil} and content=${d.Content} ]
+    	//   [?{len(statuses) != 0} and status in (${statuses}) ]
+    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
+    }
+    ```
+
+2. 生成代码
+
+    `go generate ./...`
+
+3. Over。
+
+更多示例见： [examples/persist/demo.go](examples/persist/demo.go)
+生成的文件： [examples/persist/demoimpl.go](examples/persist/demoimpl.go)
 
 
-DONE
+gobatis 更多参数
 --------------------------------------------------------------------------------
 
-* 解析接口/方法/参数/返回值
-* 生成代码
-* 参数如果是复杂结构，转成 JSON，返回字段字段如果是 JSON，转成复杂结构
-* 返回字段字段如果是 JSON，转成复杂结构时，要知道复杂结构的类型
-* 动态 SQL
-* 支持事务，参数传入 tx *sql.Tx
 
-TODO
---------------------------------------------------------------------------------
-* 支持了 Postgres(复杂类型暂不支持)，考虑支持 MySQL
-* 定义一套注解
-* time.Time 无需转换成 json
+    ```sh
+    gobatis -h
+    Usage of gobatis:
+      -db string
+        	db variable to Query/QueryRow/Exec (default "db")
+      -path string
+        	db variable path
+    ```
