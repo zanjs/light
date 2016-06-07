@@ -52,11 +52,11 @@ gobatis 更多参数
 --------------------------------------------------------------------------------
 
 
-    ```sh
-    gobatis -h
-    Usage of gobatis:
-      -db string
-        	db variable to Query/QueryRow/Exec (default "db")
-      -path string
-        	db variable path
-    ```
+```sh
+gobatis -h
+Usage of gobatis:
+  -db string
+    	db variable to Query/QueryRow/Exec (default "db")
+  -path string
+    	db variable path
+```
