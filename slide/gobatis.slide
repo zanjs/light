@@ -1,0 +1,112 @@
+gobatis
+Generate go database sql CRUD code, Spirit from MyBatis
+Tags: gobatis, mybatis, go, generate, sql, query
+18:57 18 Jun 2016
+
+Arstd
+Gopher and REPL funs
+(Retrive-Evaluate-Plan-Loop, but no Actions ^_^)
+https://github.com/arstd/gobatis
+@Arstd
+shangxuejin@gmail.com
+
+* 主要内容
+
+- gobatis 是什么
+- 为什么要用
+- 怎么使用
+- 更多约定
+- 注意事项
+- 如何实现的
+- 存在的问题
+- 下一版重写
+- Q&A 建议和意见
+
+
+* gobatis 是什么
+
+`gobatis` 是一个通过 SQL 语句生成 Go 语言数据库操作代码的小工具
+
+思想来源于 MyBatis，但和 MyBatis 不同的是：
+
+- gobatis 是编译前的辅助工具，一旦生成代码，编译和运行时不依赖它，MyBatis 是运行时帮助库，
+编译和运行时都要依赖
+- gobatis 只是个工具，完全非侵入的，可以只是自己使用，也可以在某些地方使用，甚至可以只对某些方
+法使用，如果生成的代码提交到版本控制，那么团队其他人就可以不需要知道这个工具的存在
+- gobatis 没有专门的配置文件，代码就是配置
+- 使用 gobatis 时，所有类型在编码时都必须明确，运行才能确定的类型可能无法完美支持
+- gobatis 生成的代码简单可读，可以直接加 log 调试
+
+* 为什么要用
+
+***珍爱生命***
+
+避免思考相同的逻辑－－费脑子
+减少编写重复代码－－费手指
+只关心必须关心的代码，便于查看和调试－－费眼睛
+
+
+* 怎么使用
+
+定义好数据库操作的接口和方法，并在方法上写上 SQL 语句，然后在文件中通过 go:generate 调用 gobatis，如
+
+    //go:generate gobatis
+
+    type DemoPersister interface {
+
+    	// select id, name, third_field, status, content
+    	// from demos
+    	// where name=${d.Name}
+    	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
+    	//   [?{d.Content != nil} and content=${d.Content} ]
+    	//   [?{len(statuses) != 0} and status in (${statuses}) ]
+    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
+    }
+
+.code ../examples/persist/demo.go
+
+编译之前执行 `go generate ./...`，即可生成代码
+
+
+* 约定规则
+
+- 变量 ${xxx}
+- 条件判断 [?{ Go表达式 } SQL表达式 ]，注意 [ 和 ? 和 { 之间不能有空格, ] 前必须有一个空格
+- in 表达式单独放在一对 [ ] 中，不能有其他参数
+
+
+* 注意事项
+
+- gobatis 生成的代码最好都提交到仓库中，这样即便其他人没有这个工具，也能运行
+- SQL 所有关键字都小写，方便解析，不可混用！！！
+
+
+* 如何实现的
+
+1. 通过解析接口文件，通过 go/parser 库解析，得到接口中方法、参数类型和注释
+2. 分析 SQL，得到 条件、变量，以及变量对应的参数类型等等数据
+3. 通过模板和数据，渲染生成代码，调用 goimports 工具，整理代码，最好输出到文件
+
+
+* 存在的问题
+
+- 目前只支持 Postgres，而且不完善
+- in 表达式问题
+- go/parser 库解析类型过于复杂
+- 类型支持不完整，如 time
+- 模板太难写了，数据格式也难定义
+
+
+* 下一版重写
+
+- 理论上讲，可以支持任何 database/sql 兼容的数据库，尝试 MySQL
+- 特殊标记处理 in 表达式
+- 换用 go/types 取参数和类型
+- 尝试用 ${ xxx | json } 这种格式处理变量
+- 使用模板高级特性，如调用方法，降低模板和数据结构的复杂度
+
+
+* Q&A
+
+Q & A
+建议和意见
