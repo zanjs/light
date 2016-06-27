@@ -11,7 +11,7 @@ import (
 
 	"github.com/arstd/gobatis/examples/domain"
 	"github.com/arstd/gobatis/examples/enums"
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 )
 
 type DemoPersist struct{}

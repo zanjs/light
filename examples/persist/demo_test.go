@@ -3,7 +3,7 @@ package persist
 import (
 	"testing"
 
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 
 	m "github.com/arstd/gobatis/examples/domain"
 	e "github.com/arstd/gobatis/examples/enums"

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 	"strconv"
 	"strings"
 	{{- range .Imports}}
