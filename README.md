@@ -3,6 +3,7 @@ gobatis
 
 根据接口和 SQL 生成数据库 CRUD 实现方法
 
+文档 [slide/gobatis.slide](slide/gobatis.slide)
 
 支持 6 种操作
 --------------------------------------------------------------------------------
@@ -34,7 +35,9 @@ Usage
     	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
     	//   [?{d.Content != nil} and content=${d.Content} ]
     	//   [?{len(statuses) != 0} and status in (${statuses}) ]
-    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
+    	// order by id
+    	// offset ${offset} limit ${limit}
+    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, offset, limit int) ([]*domain.Demo, error)
     }
     ```
 
@@ -42,9 +45,8 @@ Usage
 
     `go generate ./...`
 
-3. Over。
-
 更多示例见： [examples/persist/demo.go](examples/persist/demo.go)
+
 生成的文件： [examples/persist/demoimpl.go](examples/persist/demoimpl.go)
 
 
@@ -59,4 +61,6 @@ Usage of gobatis:
     	db variable to Query/QueryRow/Exec (default "db")
   -path string
     	db variable path
+
+//go:generate gobatis -db "db.DB" -path "github.com/wothing/17mei/db"
 ```

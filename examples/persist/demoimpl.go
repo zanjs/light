@@ -209,7 +209,7 @@ func (*DemoPersist) Count(tx *sql.Tx, d *domain.Demo, statuses []enums.Status) (
 	return _x, nil
 }
 
-func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page int, size int) ([]*domain.Demo, error) {
+func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, offset int, limit int) ([]*domain.Demo, error) {
 	var err error
 	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
 	var stmt string
@@ -243,6 +243,11 @@ func (*DemoPersist) List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, pa
 			strings.Repeat(",$%d", len(statuses))[1:], -1)
 		query.WriteString(stmt)
 	}
+
+	stmt = "order by id offset $%d limit $%d "
+	args = append(args, offset)
+	args = append(args, limit)
+	query.WriteString(stmt)
 
 	var dollar []interface{}
 	for i := range args {

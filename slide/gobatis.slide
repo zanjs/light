@@ -25,25 +25,31 @@ shangxuejin@gmail.com
 
 * gobatis 是什么
 
-`gobatis` 是一个通过 SQL 语句生成 Go 语言数据库操作代码的小工具
+`gobatis` 是一个通过 SQL 语句生成 Go 语言数据库操作代码的小工具，思想来源于 MyBatis
 
-思想来源于 MyBatis，但和 MyBatis 不同的是：
+- 代码生成工具，辅助编码，编译运行时不依赖
+- 只是个工具，完全非侵入，可用可不用，也可以部分方法使用
+- 可以独自使用，对其他人透明
+- 没有专门的配置文件，代码就是配置
+- 所有类型在编码时都必须明确
+- 生成的代码简单可读，可以直接加 log 调试
 
-- gobatis 是编译前的辅助工具，一旦生成代码，编译和运行时不依赖它，MyBatis 是运行时帮助库，
-编译和运行时都要依赖
-- gobatis 只是个工具，完全非侵入的，可以只是自己使用，也可以在某些地方使用，甚至可以只对某些方
-法使用，如果生成的代码提交到版本控制，那么团队其他人就可以不需要知道这个工具的存在
-- gobatis 没有专门的配置文件，代码就是配置
-- 使用 gobatis 时，所有类型在编码时都必须明确，运行才能确定的类型可能无法完美支持
-- gobatis 生成的代码简单可读，可以直接加 log 调试
 
 * 为什么要用
 
-***珍爱生命***
+**珍爱生命*
 
-避免思考相同的逻辑－－费脑子
-减少编写重复代码－－费手指
-只关心必须关心的代码，便于查看和调试－－费眼睛
+快速编码
+=> 省时间
+
+避免思考相同的逻辑
+=> 省脑子
+
+减少编写重复代码
+=> 省手指
+
+只关心必须关心的代码，便于查看和调试
+=> 护眼睛
 
 
 * 怎么使用
@@ -60,32 +66,40 @@ shangxuejin@gmail.com
     	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
     	//   [?{d.Content != nil} and content=${d.Content} ]
     	//   [?{len(statuses) != 0} and status in (${statuses}) ]
-    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
+        // order by id
+        // offset ${offset} limit ${limit}
+    	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, offset, limit int) ([]*domain.Demo, error)
     }
 
-.code ../examples/persist/demo.go
+# .code ../examples/persist/demo.go
 
 编译之前执行 `go generate ./...`，即可生成代码
 
 
 * 约定规则
 
-- 变量 ${xxx}
-- 条件判断 [?{ Go表达式 } SQL表达式 ]，注意 [ 和 ? 和 { 之间不能有空格, ] 前必须有一个空格
-- in 表达式单独放在一对 [ ] 中，不能有其他参数
+- 变量
+    ${xxx}
+- 条件判断
+    [?{ Go表达式 } SQL表达式 ]
+    注意：[ ? { 之间不能有空格, ] 前必须有一个空格
+- in 表达式单独放在 [] 中，不能有其他参数
 
 
 * 注意事项
 
 - gobatis 生成的代码最好都提交到仓库中，这样即便其他人没有这个工具，也能运行
 - SQL 所有关键字都小写，方便解析，不可混用！！！
-
+- 语句稍加格式化，减少出错的机率，建议 select/from/join/where/and/or/order-by/offset-limit 等单独成行
 
 * 如何实现的
 
+parser --> prepare --> render --> goimports
+
 1. 通过解析接口文件，通过 go/parser 库解析，得到接口中方法、参数类型和注释
 2. 分析 SQL，得到 条件、变量，以及变量对应的参数类型等等数据
-3. 通过模板和数据，渲染生成代码，调用 goimports 工具，整理代码，最好输出到文件
+3. 通过 go 标准库 text/template，渲染生成代码
+4. 调用 goimports 工具，整理代码，最后输出到文件
 
 
 * 存在的问题
@@ -94,16 +108,21 @@ shangxuejin@gmail.com
 - in 表达式问题
 - go/parser 库解析类型过于复杂
 - 类型支持不完整，如 time
-- 模板太难写了，数据格式也难定义
+- 模板太难写了，数据格式也很难定义清晰
 
 
 * 下一版重写
 
-- 理论上讲，可以支持任何 database/sql 兼容的数据库，尝试 MySQL
+- 尝试支持 MySQL，理论上讲，可以支持任何 database/sql 兼容的数据库
 - 特殊标记处理 in 表达式
 - 换用 go/types 取参数和类型
 - 尝试用 ${ xxx | json } 这种格式处理变量
 - 使用模板高级特性，如调用方法，降低模板和数据结构的复杂度
+
+
+* 扩展
+
+通过简单定义接口，生成代码的这种思路可以使用到很多地方，比如 RPC
 
 
 * Q&A

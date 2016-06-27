@@ -44,5 +44,7 @@ type DemoPersister interface {
 	//   [?{d.ThirdField != false} and third_field=${d.ThirdField} ]
 	//   [?{d.Content != nil} and content=${d.Content} ]
 	//   [?{len(statuses) != 0} and status in (${statuses}) ]
-	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, page, size int) ([]*domain.Demo, error)
+	// order by id
+	// offset ${offset} limit ${limit}
+	List(tx *sql.Tx, d *domain.Demo, statuses []enums.Status, offset, limit int) ([]*domain.Demo, error)
 }
