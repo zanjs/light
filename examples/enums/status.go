@@ -1,9 +1,11 @@
 package enums
 
-type Status int8
+type Status int32
 
 const (
-	StatusNormal Status = 1
+	StatusUnknow Status = iota
+	StatusNormal
+	StatusDeleted
 )
 
 func (s Status) String() string {
