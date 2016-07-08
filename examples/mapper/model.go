@@ -42,7 +42,16 @@ type ModelMapper interface {
 
 	// delete from models
 	// where id=${m.Id}
-	Delete(tx *sql.Tx, m *domain.Model) (int64, error)
+	Delete(tx *sql.Tx, id int) (int64, error)
+
+	// select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
+	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
+	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildinuint32,
+	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
+	//   ptr_model
+	// from models
+	// where id=${m.Id}
+	Get(tx *sql.Tx, id int) (*domain.Model, error)
 
 	// select count(*)
 	// from models
@@ -73,5 +82,5 @@ type ModelMapper interface {
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
 	// offset ${offset} limit ${limit}
-	Select(tx *sql.Tx, m *domain.Model, ss []enums.Status, offset, limit int) ([]*domain.Model, error)
+	List(tx *sql.Tx, m *domain.Model, ss []enums.Status, offset, limit int) ([]*domain.Model, error)
 }

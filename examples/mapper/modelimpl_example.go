@@ -267,7 +267,7 @@ func (*ModelImplExample) Sum(tx *sql.Tx, m *domain.Model, ss []enums.Status) (fl
 	return sum, nil
 }
 
-func (*ModelImplExample) Select(tx *sql.Tx, m *domain.Model, ss []enums.Status,
+func (*ModelImplExample) List(tx *sql.Tx, m *domain.Model, ss []enums.Status,
 	offset, limit int) ([]*domain.Model, error) {
 	var (
 		buf  bytes.Buffer
@@ -348,4 +348,62 @@ func (*ModelImplExample) Select(tx *sql.Tx, m *domain.Model, ss []enums.Status,
 	}
 
 	return data, nil
+}
+
+// select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
+//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
+//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildinuint32,
+//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
+//   ptr_model
+// from models
+// where id=${m.Id}
+func (*ModelImplExample) Get(tx *sql.Tx, id int) (*domain.Model, error) {
+	var (
+		buf  bytes.Buffer
+		args []interface{}
+		err  error
+	)
+
+	buf.WriteString(`select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
+	  buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
+	  buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
+	  buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model
+	from models
+	where id=%s`)
+	args = append(args, id)
+
+	var ph []interface{}
+	for i := range args {
+		ph = append(ph, "$"+strconv.Itoa(i+1))
+	}
+
+	query := fmt.Sprintf(buf.String(), ph...)
+
+	log.Debug(query)
+	log.Debug(args...)
+
+	x := &domain.Model{}
+	var x_BuildinMap, x_PtrModel []byte
+	err = db.QueryRow(query, args...).Scan(
+		&x.Id, &x.BuildinBool, &x.BuildinByte, &x.BuildinFloat32,
+		&x.BuildinFloat64, &x.BuildinInt, &x.BuildinInt16, &x.BuildinInt32,
+		&x.BuildinInt64, &x.BuildinInt8, &x.BuildinRune, &x.BuildinString,
+		&x.BuildinUint, &x.BuildinUint16, &x.BuildinUint32, &x.BuildinUint64,
+		&x.BuildinUint8, &x_BuildinMap, &x.EnumStatus, &x_PtrModel)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	err = json.Unmarshal(x_BuildinMap, &x.BuildinMap)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	err = json.Unmarshal(x_PtrModel, &x.PtrModel)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return x, nil
 }

@@ -47,6 +47,7 @@ func TestModelMapperInsert(t *testing.T) {
 		t.Fatalf("add error: %s", err)
 	}
 
+	id = m.Id
 	log.JSON(m)
 }
 
@@ -87,6 +88,19 @@ func TestModelMapperUpdate(t *testing.T) {
 	}
 
 	log.JSON(a)
+}
+
+func TestModelMapperGet(t *testing.T) {
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	m, err := x.Get(tx, id)
+	CommitTx(tx)
+
+	if err != nil {
+		t.Fatalf("add error: %s", err)
+	}
+
+	log.JSON(m)
 }
 
 func TestModelMapperDelete(t *testing.T) {
@@ -143,7 +157,7 @@ func TestModelMapperSelect(t *testing.T) {
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
-	mts, err := x.Select(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted}, 1, 9999)
+	mts, err := x.List(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted}, 1, 9999)
 	CommitTx(tx)
 
 	if err != nil {
