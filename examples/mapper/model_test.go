@@ -1,4 +1,4 @@
-package persist
+package mapper
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 )
 
 var x ModelImplExample
+var id int
 
 func TestModelMapperInsert(t *testing.T) {
 	m := &m.Model{
@@ -51,7 +52,7 @@ func TestModelMapperInsert(t *testing.T) {
 
 func TestModelMapperUpdate(t *testing.T) {
 	m := &m.Model{
-		Id:          "",
+		Id:          id,
 		BuildinBool: true,
 		BuildinByte: 'x',
 		// BuildinComplex128 complex128
@@ -64,7 +65,7 @@ func TestModelMapperUpdate(t *testing.T) {
 		BuildinInt32:   2,
 		BuildinInt64:   2,
 		BuildinInt8:    2,
-		BuildinRune:    '中',
+		BuildinRune:    '个',
 		BuildinString:  "text",
 		BuildinUint:    2,
 		BuildinUint16:  2,
@@ -78,17 +79,64 @@ func TestModelMapperUpdate(t *testing.T) {
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
-	err = x.Update(tx, m)
+	a, err := x.Update(tx, m)
 	CommitTx(tx)
 
 	if err != nil {
 		t.Fatalf("add error: %s", err)
 	}
 
-	log.JSON(m)
+	log.JSON(a)
 }
 
-func TestModelPersisterList(t *testing.T) {
+func TestModelMapperDelete(t *testing.T) {
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	a, err := x.Delete(tx, id)
+	CommitTx(tx)
+
+	if err != nil {
+		t.Fatalf("add error: %s", err)
+	}
+
+	log.JSON(a)
+}
+
+func TestModelMapperCount(t *testing.T) {
+	m := &m.Model{
+		BuildinBool: true,
+		EnumStatus:  e.StatusNormal,
+	}
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	count, err := x.Count(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted})
+	CommitTx(tx)
+
+	if err != nil {
+		t.Fatalf("list(%+v) error: %s", m, err)
+	}
+
+	log.JSON(count)
+}
+
+func TestModelMapperSum(t *testing.T) {
+	m := &m.Model{
+		BuildinBool: true,
+		EnumStatus:  e.StatusNormal,
+	}
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	sum, err := x.Sum(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted})
+	CommitTx(tx)
+
+	if err != nil {
+		t.Fatalf("list(%+v) error: %s", m, err)
+	}
+
+	log.JSON(sum)
+}
+
+func TestModelMapperSelect(t *testing.T) {
 	m := &m.Model{
 		BuildinBool: true,
 		EnumStatus:  e.StatusNormal,

@@ -1,4 +1,4 @@
-package persist
+package mapper
 
 import (
 	"bytes"
@@ -91,7 +91,7 @@ func (*ModelImplExample) Update(tx *sql.Tx, m *domain.Model) (int64, error) {
 	  buildin_int32=%s, buildin_int64=%s,
 	  buildin_int8=%s, buildin_rune=%s,
 	  buildin_string=%s, buildin_uint=%s,
-	  buildin_uint16=%s, buildinuint32=%s,
+	  buildin_uint16=%s, buildin_uint32=%s,
 	  buildin_uint64=%s, buildin_uint8=%s,
 	  buildin_map=%s, enum_status=%s,
 	  ptr_model=%s
@@ -134,7 +134,7 @@ func (*ModelImplExample) Update(tx *sql.Tx, m *domain.Model) (int64, error) {
 
 // delete from models
 // where id=${m.Id}
-func (*ModelImplExample) Delete(tx *sql.Tx, m *domain.Model) (int64, error) {
+func (*ModelImplExample) Delete(tx *sql.Tx, id int) (int64, error) {
 	var (
 		buf  bytes.Buffer
 		args []interface{}
@@ -143,8 +143,7 @@ func (*ModelImplExample) Delete(tx *sql.Tx, m *domain.Model) (int64, error) {
 
 	buf.WriteString(`delete from models
 	where id=%s`)
-
-	args = append(args, m.Id)
+	args = append(args, id)
 
 	var ph []interface{}
 	for i := range args {

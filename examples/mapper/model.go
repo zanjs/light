@@ -1,4 +1,4 @@
-package persist
+package mapper
 
 import (
 	"database/sql"
@@ -33,7 +33,7 @@ type ModelMapper interface {
 	//   buildin_int32=${m.BuildinInt32}, buildin_int64=${m.BuildinInt64},
 	//   buildin_int8=${m.BuildinInt8}, buildin_rune=${m.BuildinRune},
 	//   buildin_string=${m.BuildinString}, buildin_uint=${m.BuildinUint},
-	//   buildin_uint16=${m.BuildinUint16}, buildinuint32=${m.BuildinUint32},
+	//   buildin_uint16=${m.BuildinUint16}, buildin_uint32=${m.BuildinUint32},
 	//   buildin_uint64=${m.BuildinUint64}, buildin_uint8=${m.BuildinUint8},
 	//   buildin_map=${m.BuildinMap}, enum_status=${m.EnumStatus},
 	//   ptr_model=${m.PtrModel}
