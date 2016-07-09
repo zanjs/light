@@ -7,184 +7,196 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gotips/log"
-	"strconv"
-	"strings"
-	{{- range .Imports}}
-	{{.}}{{- end }}
+	{{range .Imports}}
+	{{.}}
+	{{end }}
 )
 
 type {{ .Name }} struct{}
 
-{{- range .Methods }}
+{{range .Methods }}
 
-func (*{{ $.Name }}) {{ .Name }}({{range $i,$vt := .Params}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) ({{range $i,$vt := .Returns}}{{if $i | ne 0}}, {{end}}{{$vt.Var}} {{$vt.Slice}}{{$vt.Star}}{{$vt.Package}}{{and $vt.Package "."}}{{$vt.Type}}{{ end }}) {
-	var err error
-	query, args := bytes.NewBuffer([]byte{}), []interface{}{}
-	var stmt string
-{{- range .Fragments}}
-{{if .Cond }}
-	if {{.Cond}} {
-{{- end}}
-	stmt = "{{.Stmt}} "
-{{- range $i, $vt := .Args}}
-	{{- if eq .SQLIn true}}
-		for _, v := range {{.Scope}}{{and .Scope "."}}{{$vt.Var}} {
-			args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}v{{and $vt.Alias ")"}})
-		}
-		stmt = strings.Replace(stmt, "$%d",
-			strings.Repeat(",$%d", len({{.Scope}}{{and .Scope "."}}{{.Var}}))[1:], -1)
+func (*{{ $.Name }}) {{.Signature}} {
+	var (
+		buf  bytes.Buffer
+		args []interface{}
+		err  error
+	)
 
-	{{- else if .Marshal }}
-		{{.Scope}}{{and .Scope "_"}}{{.Var}}, err := json.Marshal({{.Scope}}{{and .Scope "."}}{{.Var}})
-		if err != nil {
-			log.Errorf("marshal(%#v) error: %s",{{.Scope}}{{and .Scope "."}}{{.Var}}, err)
-		}
-		args = append(args, {{.Scope}}{{and .Scope "_"}}{{.Var}})
-
-	{{- else }}
-		args = append(args, {{ $vt.Alias}}{{and $vt.Alias "("}}{{$vt.Scope}}{{and .Scope "."}}{{$vt.Var}}{{and $vt.Alias ")"}})
-	{{- end }}
-{{- end }}
-	query.WriteString(stmt)
-	{{- if .Cond}}
-	}{{end}}
-{{- end}}
-
-	var dollar []interface{}
-	for i := range args {
-		dollar = append(dollar, i+1)
-	}
-	stmt = fmt.Sprintf(query.String(), dollar...)
-
-	log.Debug(stmt)
-	log.Debug(args...)
-
-{{- if .Type | eq "add" }}
-	{{- if .Unmarshals}}
-	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
-	{{- end}}
-	{{ if .Scans }}
-	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
-	err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return err
-	}
-	return nil
-	{{else}}
-	res, err := {{.Tx}}.Exec(stmt, args...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return 0, err
-	}
-	return res.RowsAffected()
+	{{range .Fragments}}
+		{{if .Cond }} if {{.Cond}} { {{end}}
+			stmt := `{{.Stmt}} `
+			{{range .Args}}
+				{{if .IsIn}}
+					stmt = strings.Replace(stmt, "(%s)",
+						strings.Repeat(",%s", len({{.Var}}))[1:], -1)
+					for _, s := range {{.Var}} {
+						args = append(args, int32(s))
+					}
+				{{else}}
+					{{.UnderlineVar}}, err := json.Marshal({{.Var}})
+					if err != nil {
+						log.Error(err)
+						return
+					}
+					args = append(args, {{.Var}})
+				{{end}}
+			{{end}}
+			buf.WriteString(stmt)
+		{{if .Cond }} } {{end}}
 	{{end}}
 
-{{- else if .Type | eq "modify"}}
-	res, err := {{.Tx}}.Exec(stmt, args...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return 0, err
-	}
-	return res.RowsAffected()
-
-{{- else if .Type | eq "remove"}}
-	res, err := {{.Tx}}.Exec(stmt, args...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return 0, err
-	}
-	return res.RowsAffected()
-
-{{- else if .Type | eq "get"}}
-	var _x {{.Result.Package}}{{and .Result.Package "."}}{{.Result.Type}}
-	{{ if .Unmarshals }}
-	var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
-	{{ end }}
-	dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
-
-	err ={{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return nil, err
+	var ph []interface{}
+	for i := range args {
+		ph = append(ph, "$"+strconv.Itoa(i+1))
 	}
 
-	{{- range .Unmarshals}}
-	{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}} = {{.Slice}}{{if .Slice}}{{.Star}}{{else}}{{and .Star "&"}}{{end}}{{.Package}}{{and .Package "."}}{{.Type}}{}
-		err = json.Unmarshal({{or .Scope "_x"}}{{.Concat}}{{.Var}}, &{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}})
+	query := fmt.Sprintf(buf.String(), ph...)
+
+	log.Debug(query)
+	log.Debug(args...)
+
+	{{if eq .Type "Insert"}}
+		{{if .Dest}}
+			var dest []interface{}
+			{{range .Dest}}
+				{{if .IsPrimitive}}
+					dest = append(dest, {{.Var}})
+				{{else}}
+					var {{.UnderlineVar}} []byte
+					dest = append(dest, {{.Var}})
+				{{end}}
+			{{end}}
+			err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
+			if err != nil {
+				log.Error(err)
+				log.Error(stmt)
+				log.Error(args...)
+				return
+			}
+			{{range .Dest}}
+				{{if not .IsPrimitive}}
+					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+					if err != nil {
+						log.Error(err)
+						return
+					}
+				{{end}}
+			{{end}}
+			return nil
+		{{else}}
+			res, err := {{.Tx}}.Exec(stmt, args...)
+			if err != nil {
+				log.Error(err)
+				log.Error(stmt)
+				log.Error(args...)
+				return 0, err
+			}
+			return res.RowsAffected()
+		{{end}}
+
+	{{else if eq .Type "Update"}}
+		res, err := {{.Tx}}.Exec(stmt, args...)
 		if err != nil {
 			log.Error(err)
 			log.Error(stmt)
 			log.Error(args...)
+			return 0, err
 		}
-	{{- end}}
-	return &_x, nil
+		return res.RowsAffected()
 
-{{- else if .Type | eq "count"}}
-	var _x {{range $i, $r := .Returns}}{{if eq $i 0}}{{.Type}}{{end}}{{end}}
-	err = {{.Tx}}.QueryRow(stmt, args...).Scan(&_x)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return 0, err
-	}
-	return _x, nil
-
-{{- else if .Type | eq "list"}}
-	rows, err := {{.Tx}}.Query(stmt, args...)
-	if err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return nil, err
-	}
-	defer rows.Close()
-
-    var xs {{.Result.Slice}}{{.Result.Star}}{{.Result.Package}}{{and .Result.Package "."}}{{.Result.Type}}
-	for rows.Next() {
-		var _x {{.Result.Package}}{{and .Result.Package "."}}{{.Result.Type}}
-		xs = append(xs, &_x)
-
-		{{ if .Unmarshals}}
-		var {{range $i, $vt := .Unmarshals}}{{if ne $i 0}}, {{end}}{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} []byte
-		{{ end }}
-        dest := []interface{}{ {{range $i, $vt := .Scans}}{{if ne $i 0}}, {{end}}&{{or $vt.Scope "_x"}}{{$vt.Concat}}{{$vt.Var}}{{end}} }
-
-		err = rows.Scan(dest...)
+	{{else if eq .Type "Delete"}}
+		res, err := {{.Tx}}.Exec(stmt, args...)
 		if err != nil {
 			log.Error(err)
 			log.Error(stmt)
 			log.Error(args...)
+			return 0, err
+		}
+		return res.RowsAffected()
+
+	{{else if eq .Type "Count"}}
+		var _x {{.ReturnType.Type}}
+		err = {{.Tx}}.QueryRow(stmt, args...).Scan(&_x)
+		if err != nil {
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
+			return 0, err
+		}
+		return _x, nil
+
+	{{else if eq .Type "Get"}}
+		var dest []interface{}
+		{{range .Dest}}
+			{{if .IsPrimitive}}
+				dest = append(dest, {{.Var}})
+			{{else}}
+				var {{.UnderlineVar}} []byte
+				dest = append(dest, {{.Var}})
+			{{end}}
+		{{end}}
+		err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
+		if err != nil {
+			log.Error(err)
+			log.Error(stmt)
+			log.Error(args...)
+			return
+		}
+		{{range .Dest}}
+			{{if not .IsPrimitive}}
+				err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+				if err != nil {
+					log.Error(err)
+					return
+				}
+			{{end}}
+		{{end}}
+		return
+
+	{{if eq .Type "List"}}
+		rows, err := tx.Query(query, args...)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+		defer rows.Close()
+
+		data := {{.ReturnType.Type}}{}
+		for rows.Next() {
+			var x {{.ReturnType.Elem}}
+			data = append(data, &x)
+
+			var dest []interface{}
+			{{range .Dest}}
+				{{if .IsPrimitive}}
+					dest = append(dest, {{.Var}})
+				{{else}}
+					var {{.UnderlineVar}} []byte
+					dest = append(dest, {{.Var}})
+				{{end}}
+			{{end}}
+			err = rows.Scan(dest...)
+			if err != nil {
+				log.Error(err)
+				return nil, err
+			}
+			{{range .Dest}}
+				{{if not .IsPrimitive}}
+					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+					if err != nil {
+						log.Error(err)
+						return
+					}
+				{{end}}
+			{{end}}
+		}
+		if err = rows.Err(); err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
-		{{- range .Unmarshals}}
-		{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}} = {{.Slice}}{{if .Slice}}{{.Star}}{{else}}{{and .Star "&"}}{{end}}{{.Package}}{{and .Package "."}}{{.Type}}{}
-		err = json.Unmarshal({{or .Scope "_x"}}{{.Concat}}{{.Var}}, &{{or .Scope "_x"}}{{and .Concat "."}}{{.Var}})
-		if err != nil {
-			log.Errorf("unmarshal(%s) error: %s",{{or .Scope "_x"}}{{.Concat}}{{.Var}}, err)
-		}
-		{{- end}}
-	}
-	if err = rows.Err(); err != nil {
-		log.Error(err)
-		log.Error(stmt)
-		log.Error(args...)
-		return nil, err
-	}
-	return xs, nil
-
-{{- end}}
+		return data, nil
+	{{end}}
 }
-{{- end}}
+{{end}}
