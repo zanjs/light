@@ -1,13 +1,48 @@
 package main
 
-func parse(file string) (m *Mapper, err error) {
-	var docs map[string]string
-	docs, err = parseDocs(file)
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+
+	"github.com/wothing/log"
+)
+
+func readGoFile(file string) (m *Mapper, err error) {
+	// var docs map[string]string
+	// docs, err = parseDocs(file)
+	// if err != nil {
+	// 	return
+	// }
+
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 	if err != nil {
-		return
+		panic(err)
 	}
 
-	_ = docs
+	// log.Debug(f.Doc.Text())
+	//
+	// for _, c := range f.Comments {
+	// 	log.Info()
+	// 	log.Debug(c.Text())
+	// }
+
+	for _, d := range f.Decls {
+		log.Info()
+		genDecl, ok := d.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+
+		switch genDecl.Tok {
+		case token.IMPORT:
+			log.Debugf("%#v", genDecl)
+
+		case token.TYPE:
+			log.Debugf("%#v", genDecl)
+		}
+	}
 
 	return
 }

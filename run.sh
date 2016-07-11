@@ -2,12 +2,12 @@
 
 set -e
 
-# install gobatis
-go-bindata template.txt
-# go install
+# Install gobatis
+# go-bindata template.txt
+go install
 
-# use persist to generate code
-go generate examples/persist/demo.go
+# Use persist to generate code
+go generate examples/mapper/model.go
 
-# test
-go test -v examples/persist/*.go
+# Test
+# go test -v examples/persist/*.go

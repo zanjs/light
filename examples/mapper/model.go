@@ -7,7 +7,7 @@ import (
 	"github.com/arstd/gobatis/examples/enums"
 )
 
-//go:generate go run ../../*.go
+//go:generate gobatis
 
 // ModelMapper 示例接口
 type ModelMapper interface {
