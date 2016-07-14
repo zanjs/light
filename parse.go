@@ -2,13 +2,20 @@ package main
 
 import (
 	"go/ast"
+	"go/format"
+	"go/importer"
 	"go/parser"
 	"go/token"
+	"go/types"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/wothing/log"
 )
 
-func readGoFile(file string) (m *Mapper, err error) {
+func readGoFile(file string) (err error) {
+
 	// var docs map[string]string
 	// docs, err = parseDocs(file)
 	// if err != nil {
@@ -21,6 +28,8 @@ func readGoFile(file string) (m *Mapper, err error) {
 		panic(err)
 	}
 
+	log.Debug(f.Name)
+
 	// log.Debug(f.Doc.Text())
 	//
 	// for _, c := range f.Comments {
@@ -28,26 +37,237 @@ func readGoFile(file string) (m *Mapper, err error) {
 	// 	log.Debug(c.Text())
 	// }
 
+	// ast.Print(fset, f)
+	// format.Node(os.Stdout, fset, f)
+
 	for _, d := range f.Decls {
-		log.Info()
 		genDecl, ok := d.(*ast.GenDecl)
 		if !ok {
+			format.Node(os.Stdout, fset, d)
 			continue
 		}
 
 		switch genDecl.Tok {
 		case token.IMPORT:
-			log.Debugf("%#v", genDecl)
+			m.Imports = getImports(genDecl)
 
 		case token.TYPE:
-			log.Debugf("%#v", genDecl)
+			m.Name, m.Methods = getNameAndMethods(fset, genDecl)
+
+		default:
+			format.Node(os.Stdout, fset, d)
+		}
+	}
+
+	// log.JSONIndent(m)
+
+	info := types.Info{
+		Types: make(map[ast.Expr]types.TypeAndValue),
+		Defs:  make(map[*ast.Ident]types.Object),
+	}
+	conf := types.Config{Importer: importer.Default()}
+	_, err = conf.Check(m.Name, fset, []*ast.File{f}, &info)
+	if err != nil {
+		panic(err)
+	}
+
+	// log.Warn(pkg.Name())
+
+	for _, obj := range info.Defs {
+		if obj == nil {
+			continue
+		}
+
+		itf, ok := obj.Type().Underlying().(*types.Interface)
+		if !ok {
+			// log.Warnf("%#v", obj)
+			continue
+		}
+
+		for i := 0; i < itf.NumMethods(); i++ {
+			for _, o := range m.Methods {
+				if o.Name == itf.Method(i).Name() {
+					getOperationInfo(o, itf.Method(i).Type().(*types.Signature))
+					break
+				}
+			}
 		}
 	}
 
 	return
 }
 
-func parseDocs(file string) (docs map[string]string, err error) {
+func getImports(gd *ast.GenDecl) map[string]string {
+	imports := map[string]string{}
+	for _, spec := range gd.Specs {
+		is, _ := spec.(*ast.ImportSpec) // TODO must check error
+
+		k, err := strconv.Unquote(is.Path.Value)
+		if err != nil {
+			panic(err)
+		}
+		if is.Name != nil {
+			imports[k] = is.Name.Name + " " + is.Path.Value
+		} else {
+			imports[k] = is.Path.Value
+		}
+	}
+	return imports
+}
+
+func getNameAndMethods(fset *token.FileSet, gd *ast.GenDecl) (name string, ms []*Operation) {
+	ts, _ := gd.Specs[0].(*ast.TypeSpec)
+	name = ts.Name.Name
+
+	it, _ := ts.Type.(*ast.InterfaceType)
+
+	ms = make([]*Operation, it.Methods.NumFields())
+	for i, m := range it.Methods.List {
+		var o Operation
+		ms[i] = &o
+
+		o.Doc = getComment(m.Doc)
+		o.Name = m.Names[0].Name // TODO multiple
+
+		// ft, _ := m.Type.(*ast.FuncType)
+
+		// o.Params = getFeilds(ft.Params)
+		// o.Results = getFeilds(ft.Results)
+	}
 
 	return
+}
+
+func getComment(cg *ast.CommentGroup) (comment string) {
+	for _, c := range cg.List {
+		comment += strings.TrimSpace(c.Text[2:]) + " " // remove `//`
+	}
+	return
+}
+
+//
+// func getFeilds(fl *ast.FieldList) (vts []*Type) {
+// 	vts = []*Type{}
+// 	for _, field := range fl.List {
+// 		for _, name := range field.Names {
+// 			vts = append(vts, &Type{
+// 				Var: name.Name,
+// 			})
+// 		}
+// 	}
+// 	return vts
+// }
+
+func getOperationInfo(o *Operation, sig *types.Signature) {
+	o.Params = getFields(sig.Params())
+	o.Results = getFields(sig.Results())
+}
+
+func getFields(ts *types.Tuple) (fs map[string]*Type) {
+	fs = make(map[string]*Type, ts.Len())
+	for i := 0; i < ts.Len(); i++ {
+		u := ts.At(i)
+
+		v := u.Name()
+		if v == "" {
+			v = makeVarName(u.Type().String())
+		}
+
+		if t, ok := uses[u.Type().String()]; ok {
+			fs[v] = t
+			continue
+		}
+
+		t := &Type{
+			Type: u.Type().String(),
+		}
+		fs[v] = t
+
+		getOtherInfo(t, u.Type())
+
+		uses[u.Type().String()] = t
+	}
+	return
+}
+
+func getOtherInfo(vt *Type, t types.Type) {
+	// log.Debugf("%#v", t)
+	// time.Sleep(100 * time.Millisecond)
+
+	switch t.(type) {
+
+	case *types.Slice:
+		s := t.(*types.Slice)
+		vt.Slice = true
+		getOtherInfo(vt, s.Elem())
+
+	case *types.Pointer:
+		p := t.(*types.Pointer)
+		vt.Pointer = true
+		getOtherInfo(vt, p.Elem())
+
+	case *types.Named:
+		n := t.(*types.Named)
+		if n.Obj().Pkg() != nil {
+			vt.Name = n.Obj().Name()
+			vt.Path = n.Obj().Pkg().Path()
+			if imp, ok := m.Imports[vt.Path]; ok {
+				if i := strings.Index(imp, " "); i != -1 {
+					vt.Package = imp[:i]
+				} else {
+					vt.Package = n.Obj().Pkg().Name()
+				}
+			} else {
+				m.Imports[vt.Path] = `"` + vt.Path + `"`
+				vt.Package = n.Obj().Pkg().Name()
+			}
+
+			if vt.Name == "Tx" || vt.Name == "Time" {
+				return
+			}
+			getOtherInfo(vt, n.Underlying())
+		}
+
+	case *types.Struct:
+		s := t.(*types.Struct)
+		vt.Fields = make(map[string]*Type, s.NumFields())
+		for i := 0; i < s.NumFields(); i++ {
+			f := s.Field(i)
+
+			if v, ok := uses[f.Type().String()]; ok {
+				// 避免 json 打印时 递归
+				x := *v
+				x.Fields = nil
+				vt.Fields[f.Name()] = &x
+
+				continue
+			}
+
+			vt.Fields[f.Name()] = &Type{
+				Type: f.Type().String(),
+			}
+
+			uses[f.Type().String()] = vt.Fields[f.Name()]
+
+			getOtherInfo(vt.Fields[f.Name()], f.Type())
+		}
+
+	case *types.Basic:
+		b := t.(*types.Basic)
+		vt.Primitive = b.Name()
+
+	default:
+		log.Infof("%s %#v", t.String(), t)
+	}
+}
+
+func makeVarName(t string) string {
+	i := strings.LastIndex(t, ".")
+
+	s := ""
+	if t[0:2] == "[]" {
+		s = "s"
+	}
+
+	return strings.ToLower(t[i+1:i+2]) + s
 }

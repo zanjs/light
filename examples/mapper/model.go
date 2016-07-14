@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/arstd/gobatis/examples/domain"
-	"github.com/arstd/gobatis/examples/enums"
+	e "github.com/arstd/gobatis/examples/enums"
 )
 
 //go:generate gobatis
@@ -60,7 +60,7 @@ type ModelMapper interface {
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
 	// offset ${offset} limit ${limit}
-	Count(tx *sql.Tx, m *domain.Model, ss []enums.Status) (int64, error)
+	Count(tx *sql.Tx, m *domain.Model, ss []e.Status) (int64, error)
 
 	// select sum(buildin_float64)
 	// from models
@@ -69,7 +69,7 @@ type ModelMapper interface {
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
 	// offset ${offset} limit ${limit}
-	Sum(tx *sql.Tx, m *domain.Model, ss []enums.Status) (float64, error)
+	Sum(tx *sql.Tx, m *domain.Model, ss []e.Status) (float64, error)
 
 	// select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
@@ -82,5 +82,5 @@ type ModelMapper interface {
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
 	// offset ${offset} limit ${limit}
-	List(tx *sql.Tx, m *domain.Model, ss []enums.Status, offset, limit int) ([]*domain.Model, error)
+	List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset, limit int) ([]*domain.Model, error)
 }

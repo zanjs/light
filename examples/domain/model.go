@@ -1,10 +1,14 @@
 package domain
 
-import "github.com/arstd/gobatis/examples/enums"
+import (
+	"time"
+
+	"github.com/arstd/gobatis/examples/enums"
+)
 
 // Model 示例结构体
 type Model struct {
-	Id          int
+	Id          int `json:"id"`
 	BuildinBool bool
 	BuildinByte byte
 	// BuildinComplex128 complex128
@@ -29,6 +33,7 @@ type Model struct {
 
 	EnumStatus enums.Status
 	PtrModel   *Model
+	Time       time.Time
 }
 
 /*

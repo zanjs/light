@@ -2,13 +2,17 @@ package main
 
 import "strings"
 
+var uses = map[string]*Type{}
+
+var m = &Mapper{}
+
 type Mapper struct {
 	Source string
 
 	Path    string
 	Package string
 
-	Imports []string
+	Imports map[string]string
 
 	Name string
 
@@ -16,64 +20,77 @@ type Mapper struct {
 }
 
 type Operation struct {
+	Doc string // select ... from ...
+
 	Name string
 	Tx   string
 
-	Params  []*VarType
-	Returns []*VarType
+	Params  map[string]*Type
+	Results map[string]*Type
 
 	Type string
 
 	Fragments []*Fragment
 
-	Dest       []*VarType
-	ReturnType []*VarType
+	Dest       []*Type
+	ReturnType []*Type
 }
 
 func (o *Operation) Signature() string {
-	return o.Name + "(" + o.ParamsCode() + ")(" + o.ReturnsCode() + ")"
+	return o.Name + "(" + o.ParamsCode() + ")(" + o.ResultsCode() + ")"
 }
 
 func (o *Operation) ParamsCode() string {
 	var codes []string
-	for _, vt := range o.Params {
-		codes = append(codes, vt.String())
+	for v, t := range o.Params {
+		codes = append(codes, v+t.String())
 	}
 	return strings.Join(codes, ", ")
 }
 
-func (o *Operation) ReturnsCode() string {
+func (o *Operation) ResultsCode() string {
 	var codes []string
-	for _, vt := range o.Returns {
-		codes = append(codes, vt.String())
+	for v, t := range o.Results {
+		codes = append(codes, v+t.String())
 	}
 	return strings.Join(codes, ", ")
 }
 
-type VarType struct {
-	Var  string
+type Type struct {
 	Type string
+
+	Name      string
+	Slice     bool
+	Pointer   bool
+	Package   string
+	Path      string
+	Primitive string
+
+	Fields map[string]*Type
 
 	IsIn bool
 }
 
-func (t *VarType) UnderlineVar() string {
-	return strings.Replace(t.Var, ".", "_", -1)
+func (t *Type) String() string {
+	return t.Type
 }
 
-func (t *VarType) String() string {
-	return t.Var + " " + t.Type
+func (t *Type) Alias() string {
+	if t.Primitive == t.Type {
+		return ""
+	}
+	return t.Primitive
 }
 
-func (t *VarType) IsPointer() bool {
+func (t *Type) IsPointer() bool {
 	return t.Type[0] == '*'
 }
 
-func (t *VarType) IsSlice() bool {
+func (t *Type) IsSlice() bool {
 	return t.Type[0] == '['
 }
 
-func (t *VarType) Elem() string {
+func (t *Type) Elem() string {
 	if t.Type[0] == '[' {
 		if len(t.Type) < 2 {
 			panic("type " + t.Type + " not supported")
@@ -93,20 +110,8 @@ func (t *VarType) Elem() string {
 	return t.Type[2:]
 }
 
-func (t *VarType) IsPrimitive() bool {
-	switch t.Type {
-	case "bool", "byte", "error", "float32", "float64", "int", "int16",
-		"int32", "int64", "int8", "rune", "string", "uint", "uint16",
-		"uint32", "uint64", "uint8":
-		return true
-
-	default:
-		return false
-	}
-}
-
 type Fragment struct {
 	Cond string
 	Stmt string
-	Args []*VarType
+	Args []*Type
 }

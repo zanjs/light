@@ -13,9 +13,11 @@ func main() {
 	filename := gofile[:len(gofile)-3] + "impl.go"
 	os.Remove(filename)
 
-	meta, err := readGoFile(gofile)
+	err := readGoFile(gofile)
 	if err != nil {
 		panic(err)
 	}
-	log.JSONIndent(meta)
+	log.JSONIndent(m)
+
+	// log.JSONIndent(uses)
 }
