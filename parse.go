@@ -14,7 +14,7 @@ import (
 	"github.com/wothing/log"
 )
 
-func readGoFile(file string) (err error) {
+func parseGofile(file string) (err error) {
 
 	// var docs map[string]string
 	// docs, err = parseDocs(file)
@@ -49,24 +49,24 @@ func readGoFile(file string) (err error) {
 
 		switch genDecl.Tok {
 		case token.IMPORT:
-			m.Imports = getImports(genDecl)
+			mapper.Imports = getImports(genDecl)
 
 		case token.TYPE:
-			m.Name, m.Methods = getNameAndMethods(fset, genDecl)
+			mapper.Name, mapper.Methods = getNameAndMethods(fset, genDecl)
 
 		default:
 			format.Node(os.Stdout, fset, d)
 		}
 	}
 
-	// log.JSONIndent(m)
+	// log.JSONIndent(mapper)
 
 	info := types.Info{
 		Types: make(map[ast.Expr]types.TypeAndValue),
 		Defs:  make(map[*ast.Ident]types.Object),
 	}
 	conf := types.Config{Importer: importer.Default()}
-	_, err = conf.Check(m.Name, fset, []*ast.File{f}, &info)
+	_, err = conf.Check(mapper.Name, fset, []*ast.File{f}, &info)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +85,7 @@ func readGoFile(file string) (err error) {
 		}
 
 		for i := 0; i < itf.NumMethods(); i++ {
-			for _, o := range m.Methods {
+			for _, o := range mapper.Methods {
 				if o.Name == itf.Method(i).Name() {
 					getOperationInfo(o, itf.Method(i).Type().(*types.Signature))
 					break
@@ -122,14 +122,14 @@ func getNameAndMethods(fset *token.FileSet, gd *ast.GenDecl) (name string, ms []
 	it, _ := ts.Type.(*ast.InterfaceType)
 
 	ms = make([]*Operation, it.Methods.NumFields())
-	for i, m := range it.Methods.List {
+	for i, mapper := range it.Methods.List {
 		var o Operation
 		ms[i] = &o
 
-		o.Doc = getComment(m.Doc)
-		o.Name = m.Names[0].Name // TODO multiple
+		o.Doc = getComment(mapper.Doc)
+		o.Name = mapper.Names[0].Name // TODO multiple
 
-		// ft, _ := m.Type.(*ast.FuncType)
+		// ft, _ := mapper.Type.(*ast.FuncType)
 
 		// o.Params = getFeilds(ft.Params)
 		// o.Results = getFeilds(ft.Results)
@@ -211,14 +211,14 @@ func getOtherInfo(vt *Type, t types.Type) {
 		if n.Obj().Pkg() != nil {
 			vt.Name = n.Obj().Name()
 			vt.Path = n.Obj().Pkg().Path()
-			if imp, ok := m.Imports[vt.Path]; ok {
+			if imp, ok := mapper.Imports[vt.Path]; ok {
 				if i := strings.Index(imp, " "); i != -1 {
 					vt.Package = imp[:i]
 				} else {
 					vt.Package = n.Obj().Pkg().Name()
 				}
 			} else {
-				m.Imports[vt.Path] = `"` + vt.Path + `"`
+				mapper.Imports[vt.Path] = `"` + vt.Path + `"`
 				vt.Package = n.Obj().Pkg().Name()
 			}
 
@@ -262,6 +262,10 @@ func getOtherInfo(vt *Type, t types.Type) {
 }
 
 func makeVarName(t string) string {
+	if t == "error" {
+		return "err"
+	}
+
 	i := strings.LastIndex(t, ".")
 
 	s := ""

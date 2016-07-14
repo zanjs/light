@@ -4,7 +4,7 @@ import "strings"
 
 var uses = map[string]*Type{}
 
-var m = &Mapper{}
+var mapper = &Mapper{}
 
 type Mapper struct {
 	Source string
@@ -28,12 +28,12 @@ type Operation struct {
 	Params  map[string]*Type
 	Results map[string]*Type
 
-	Type string
+	OpType string
 
 	Fragments []*Fragment
 
-	Dest       []*Type
-	ReturnType []*Type
+	Dest       []*VarType
+	ReturnType *Type
 }
 
 func (o *Operation) Signature() string {
@@ -67,8 +67,6 @@ type Type struct {
 	Primitive string
 
 	Fields map[string]*Type
-
-	IsIn bool
 }
 
 func (t *Type) String() string {
@@ -113,5 +111,12 @@ func (t *Type) Elem() string {
 type Fragment struct {
 	Cond string
 	Stmt string
-	Args []*Type
+	Args []*VarType
+}
+
+type VarType struct {
+	Var  string
+	Type *Type
+
+	IsIn bool
 }

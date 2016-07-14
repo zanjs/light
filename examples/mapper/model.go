@@ -15,14 +15,14 @@ type ModelMapper interface {
 	// insert into models(buildin_bool, buildin_byte,
 	// 	 buildin_float32, buildin_float64,
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
-	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildinuint32,
+	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
 	//   ptr_model)
 	// values (${m.BuildinBool}, ${m.BuildinByte}, ${m.BuildinFloat32},
 	//   ${m.BuildinFloat64}, ${m.BuildinInt}, ${m.BuildinInt16}, ${m.BuildinInt32},
 	//   ${m.BuildinInt64}, ${m.BuildinInt8}, ${m.BuildinRune}, ${m.BuildinString},
 	//   ${m.BuildinUint}, ${m.BuildinUint16}, ${m.BuildinUint32}, ${m.BuildinUint64},
-	//   ${m.BuildinUint8, ${m.BuildinMap}, ${m.EnumStatus}, ${m.PtrModel})
+	//   ${m.BuildinUint8}, ${m.BuildinMap}, ${m.EnumStatus}, ${m.PtrModel})
 	// returning id
 	Insert(tx *sql.Tx, m *domain.Model) error
 
@@ -41,43 +41,32 @@ type ModelMapper interface {
 	Update(tx *sql.Tx, m *domain.Model) (int64, error)
 
 	// delete from models
-	// where id=${m.Id}
+	// where id=${id}
 	Delete(tx *sql.Tx, id int) (int64, error)
 
 	// select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
-	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildinuint32,
+	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
 	//   ptr_model
 	// from models
-	// where id=${m.Id}
+	// where id=${id}
 	Get(tx *sql.Tx, id int) (*domain.Model, error)
 
 	// select count(*)
 	// from models
-	// where buildin_bool=${d.Name}
+	// where buildin_bool=${m.BuildinBool}
 	//   [?{m.BuildinInt != false} and buildin_int=${m.BuildinInt} ]
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
-	// order by id
-	// offset ${offset} limit ${limit}
 	Count(tx *sql.Tx, m *domain.Model, ss []e.Status) (int64, error)
-
-	// select sum(buildin_float64)
-	// from models
-	// where buildin_bool=${d.Name}
-	//   [?{m.BuildinInt != false} and buildin_int=${m.BuildinInt} ]
-	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
-	// order by id
-	// offset ${offset} limit ${limit}
-	Sum(tx *sql.Tx, m *domain.Model, ss []e.Status) (float64, error)
 
 	// select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64,
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
-	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildinuint32,
+	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
 	//   ptr_model
 	// from models
-	// where buildin_bool=${d.Name}
+	// where buildin_bool=${m.BuildinBool}
 	//   [?{m.BuildinInt != false} and buildin_int=${m.BuildinInt} ]
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
