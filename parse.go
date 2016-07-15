@@ -14,28 +14,13 @@ import (
 	"github.com/wothing/log"
 )
 
-func parseGofile(file string) (err error) {
-
-	// var docs map[string]string
-	// docs, err = parseDocs(file)
-	// if err != nil {
-	// 	return
-	// }
+func parseGofile(file string) {
 
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 	if err != nil {
 		panic(err)
 	}
-
-	log.Debug(f.Name)
-
-	// log.Debug(f.Doc.Text())
-	//
-	// for _, c := range f.Comments {
-	// 	log.Info()
-	// 	log.Debug(c.Text())
-	// }
 
 	// ast.Print(fset, f)
 	// format.Node(os.Stdout, fset, f)
@@ -93,8 +78,6 @@ func parseGofile(file string) (err error) {
 			}
 		}
 	}
-
-	return
 }
 
 func getImports(gd *ast.GenDecl) map[string]string {

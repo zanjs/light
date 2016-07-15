@@ -108,7 +108,7 @@ func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 	return
 }
 
-var parentheses = regexp.MustCompile(`\(.*\)`)
+var parentheses = regexp.MustCompile(`\(.*?\)`)
 
 func calcDest(m *Operation) {
 	var stmt string
@@ -138,8 +138,8 @@ func calcDest(m *Operation) {
 
 	fs := strings.Split(stmt, ",")
 	for _, s := range fs {
-		f := strings.TrimSpace(s)
-		f = strings.Replace(f, "_", " ", -1)
+		s = strings.TrimSpace(s)
+		f := strings.Replace(s, "_", " ", -1)
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
 
@@ -162,7 +162,7 @@ func calcDest(m *Operation) {
 				}
 
 				if f == "Count" || f == "Sum" {
-					m.Dest = append(m.Dest, &VarType{strings.ToLower(f), t, false})
+					m.Dest = append(m.Dest, &VarType{s, t, false})
 					break
 				}
 
