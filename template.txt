@@ -6,45 +6,49 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gotips/log"
-	{{range .Imports}}
+	"github.com/wothing/log"
+	{{- range .Imports}}
 	{{.}}
-	{{end }}
+	{{- end }}
 )
 
-type {{ .Name }} struct{}
+type {{.Name}} struct{}
 
-{{range .Methods }}
-
-func (*{{ $.Name }}) {{.Signature}} {
+{{- range .Methods }}
+func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 	var (
+		stmt string
 		buf  bytes.Buffer
 		args []interface{}
-		err  error
 	)
 
-	{{range .Fragments}}
+	{{- range .Fragments}}
 		{{if .Cond }} if {{.Cond}} { {{end}}
-			stmt := `{{.Stmt}} `
-			{{range .Args}}
-				{{if .IsIn}}
-					stmt = strings.Replace(stmt, "(%s)",
-						strings.Repeat(",%s", len({{.Var}}))[1:], -1)
-					for _, s := range {{.Var}} {
-						args = append(args, int32(s))
-					}
-				{{else}}
-					{{.UnderlineVar}}, err := json.Marshal({{.Var}})
-					if err != nil {
-						log.Error(err)
-						return
-					}
-					args = append(args, {{.Var}})
-				{{end}}
-			{{end}}
-			buf.WriteString(stmt)
+		stmt = `{{.Stmt}} `
+		{{- range .Args}}
+			{{- if .IsIn}}
+				stmt = strings.Replace(stmt, "(%s)",
+					strings.Repeat(",%s", len({{.Var}}))[1:], -1)
+				for _, s := range {{.Var}} {
+					args = append(args, int32(s))
+				}
+			{{- else if .Type.Primitive}}
+				args = append(args, {{.Var}})
+			{{- else if .Type.Alias}}
+				args = append(args, {{.Primitive}}({{.Var}}))
+			{{- else}}
+				var {{.UnderlineVar}} []byte
+				{{.UnderlineVar}}, err = json.Marshal({{.Var}})
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				args = append(args, {{.UnderlineVar}})
+			{{- end}}
+		{{- end}}
+		buf.WriteString(stmt)
 		{{if .Cond }} } {{end}}
-	{{end}}
+	{{- end}}
 
 	var ph []interface{}
 	for i := range args {
@@ -56,26 +60,26 @@ func (*{{ $.Name }}) {{.Signature}} {
 	log.Debug(query)
 	log.Debug(args...)
 
-	{{if eq .Type "Insert"}}
+	{{if eq .OpType "insert"}}
 		{{if .Dest}}
 			var dest []interface{}
 			{{range .Dest}}
-				{{if .IsPrimitive}}
-					dest = append(dest, {{.Var}})
+				{{if .Type.Primitive}}
+					dest = append(dest, &{{.Var}})
 				{{else}}
 					var {{.UnderlineVar}} []byte
-					dest = append(dest, {{.Var}})
+					dest = append(dest, &{{.Var}})
 				{{end}}
 			{{end}}
-			err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
+			err = {{.Tx}}.QueryRow(query, args...).Scan(dest...)
 			if err != nil {
 				log.Error(err)
-				log.Error(stmt)
+				log.Error(query)
 				log.Error(args...)
 				return
 			}
 			{{range .Dest}}
-				{{if not .IsPrimitive}}
+				{{if not .Type.Primitive}}
 					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
 					if err != nil {
 						log.Error(err)
@@ -85,76 +89,69 @@ func (*{{ $.Name }}) {{.Signature}} {
 			{{end}}
 			return nil
 		{{else}}
-			res, err := {{.Tx}}.Exec(stmt, args...)
+			res, err := {{.Tx}}.Exec(query, args...)
 			if err != nil {
 				log.Error(err)
-				log.Error(stmt)
+				log.Error(query)
 				log.Error(args...)
 				return 0, err
 			}
 			return res.RowsAffected()
 		{{end}}
 
-	{{else if eq .Type "Update"}}
-		res, err := {{.Tx}}.Exec(stmt, args...)
+	{{else if eq .OpType "update"}}
+		res, err := {{.Tx}}.Exec(query, args...)
 		if err != nil {
 			log.Error(err)
-			log.Error(stmt)
+			log.Error(query)
 			log.Error(args...)
 			return 0, err
 		}
 		return res.RowsAffected()
 
-	{{else if eq .Type "Delete"}}
-		res, err := {{.Tx}}.Exec(stmt, args...)
+	{{else if eq .OpType "delete"}}
+		res, err := {{.Tx}}.Exec(query, args...)
 		if err != nil {
 			log.Error(err)
-			log.Error(stmt)
+			log.Error(query)
 			log.Error(args...)
 			return 0, err
 		}
 		return res.RowsAffected()
 
-	{{else if eq .Type "Count"}}
-		var _x {{.ReturnType.Type}}
-		err = {{.Tx}}.QueryRow(stmt, args...).Scan(&_x)
-		if err != nil {
-			log.Error(err)
-			log.Error(stmt)
-			log.Error(args...)
-			return 0, err
-		}
-		return _x, nil
-
-	{{else if eq .Type "Get"}}
+	{{- else if eq .OpType "get"}}
 		var dest []interface{}
-		{{range .Dest}}
-			{{if .IsPrimitive}}
-				dest = append(dest, {{.Var}})
-			{{else}}
+		{{- if not .Return.Type.Primitive}}
+			{{.Return.Var}} = &{{.Return.Type.Elem}}{}
+		{{- end}}
+		{{- range .Dest}}
+			{{- if .Type.Primitive}}
+				dest = append(dest, &{{.Var}})
+			{{- else}}
 				var {{.UnderlineVar}} []byte
-				dest = append(dest, {{.Var}})
-			{{end}}
-		{{end}}
-		err = {{.Tx}}.QueryRow(stmt, args...).Scan(dest...)
+				dest = append(dest, &{{.UnderlineVar}})
+			{{- end}}
+		{{- end}}
+		err = {{.Tx}}.QueryRow(query, args...).Scan(dest...)
 		if err != nil {
 			log.Error(err)
-			log.Error(stmt)
+			log.Error(query)
 			log.Error(args...)
 			return
 		}
-		{{range .Dest}}
-			{{if not .IsPrimitive}}
-				err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+		{{- range .Dest}}
+			{{- if not .Type.Primitive}}
+				{{.Var}} = {{.Type.NewExpression}}
+				err = json.Unmarshal({{.UnderlineVar}}, {{.Var}})
 				if err != nil {
 					log.Error(err)
 					return
 				}
-			{{end}}
-		{{end}}
+			{{- end}}
+		{{- end}}
 		return
 
-	{{if eq .Type "List"}}
+	{{- else if eq .OpType "list"}}
 		rows, err := tx.Query(query, args...)
 		if err != nil {
 			log.Error(err)
@@ -162,34 +159,35 @@ func (*{{ $.Name }}) {{.Signature}} {
 		}
 		defer rows.Close()
 
-		data := {{.ReturnType.Type}}{}
+		var data {{.Return.Type}}
 		for rows.Next() {
-			var x {{.ReturnType.Elem}}
+			x := {{.Return.Type.Elem}}{}
 			data = append(data, &x)
 
 			var dest []interface{}
-			{{range .Dest}}
-				{{if .IsPrimitive}}
-					dest = append(dest, {{.Var}})
-				{{else}}
+			{{- range .Dest}}
+				{{- if .Type.Primitive}}
+					dest = append(dest, &{{.Var}})
+				{{- else}}
 					var {{.UnderlineVar}} []byte
-					dest = append(dest, {{.Var}})
-				{{end}}
-			{{end}}
+					dest = append(dest, &{{.UnderlineVar}})
+				{{- end}}
+			{{- end}}
 			err = rows.Scan(dest...)
 			if err != nil {
 				log.Error(err)
 				return nil, err
 			}
-			{{range .Dest}}
-				{{if not .IsPrimitive}}
-					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+			{{- range .Dest}}
+				{{- if not .Type.Primitive}}
+					{{.Var}} = {{.Type.NewExpression}}
+					err = json.Unmarshal({{.UnderlineVar}}, {{.Var}})
 					if err != nil {
 						log.Error(err)
 						return
 					}
-				{{end}}
-			{{end}}
+				{{- end}}
+			{{- end}}
 		}
 		if err = rows.Err(); err != nil {
 			log.Error(err)
@@ -197,6 +195,6 @@ func (*{{ $.Name }}) {{.Signature}} {
 		}
 
 		return data, nil
-	{{end}}
+	{{- end}}
 }
-{{end}}
+{{- end}}

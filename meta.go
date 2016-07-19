@@ -1,13 +1,17 @@
 package main
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 var uses = map[string]*Type{}
 
-var mapper = &Mapper{}
+var mapper = &Mapper{Tx: "db"}
 
 type Mapper struct {
 	Source string
+	Tx     string
 
 	Path    string
 	Package string
@@ -25,6 +29,9 @@ type Operation struct {
 	Name string
 	Tx   string
 
+	ParamsOrder  []*VarType
+	ResultsOrder []*VarType
+
 	Params  map[string]*Type
 	Results map[string]*Type
 
@@ -32,28 +39,41 @@ type Operation struct {
 
 	Fragments []*Fragment
 
-	Dest       []*VarType
-	ReturnType *Type
+	Dest   []*VarType
+	Return *VarType
 }
 
-func (o *Operation) Signature() string {
-	return o.Name + "(" + o.ParamsCode() + ")(" + o.ResultsCode() + ")"
+func (m *Operation) ParamsString() string {
+	return paramsString(m.ParamsOrder, m.Params)
 }
 
-func (o *Operation) ParamsCode() string {
-	var codes []string
-	for v, t := range o.Params {
-		codes = append(codes, v+t.String())
+func (m *Operation) ResultsString() string {
+	return paramsString(m.ResultsOrder, m.Results)
+}
+
+func paramsString(pos []*VarType, ps map[string]*Type) string {
+	var slice []string
+	for _, vt := range pos {
+		slice = append(slice, vt.Var+" "+ps[vt.Var].String())
 	}
-	return strings.Join(codes, ", ")
+	return strings.Join(slice, ",")
 }
 
-func (o *Operation) ResultsCode() string {
-	var codes []string
-	for v, t := range o.Results {
-		codes = append(codes, v+t.String())
-	}
-	return strings.Join(codes, ", ")
+type Fragment struct {
+	Cond string
+	Stmt string
+	Args []*VarType
+}
+
+type VarType struct {
+	Var  string
+	Type *Type
+
+	IsIn bool
+}
+
+func (vt *VarType) UnderlineVar() string {
+	return "x_" + strings.Replace(vt.Var, ".", "_", -1)
 }
 
 type Type struct {
@@ -70,14 +90,24 @@ type Type struct {
 }
 
 func (t *Type) String() string {
-	return t.Type
+	var slice, star, pkg string
+	if t.Slice {
+		slice = "[]"
+	}
+	if t.Pointer {
+		star = "*"
+	}
+	if t.Package != "" {
+		pkg = t.Package + "."
+	}
+	if t.Name == "" {
+		t.Name = t.Type
+	}
+	return fmt.Sprintf("%s%s%s%s", slice, star, pkg, t.Name)
 }
 
-func (t *Type) Alias() string {
-	if t.Primitive == t.Type {
-		return ""
-	}
-	return t.Primitive
+func (t *Type) Alias() bool {
+	return t.Primitive == t.Type
 }
 
 func (t *Type) IsPointer() bool {
@@ -89,34 +119,23 @@ func (t *Type) IsSlice() bool {
 }
 
 func (t *Type) Elem() string {
-	if t.Type[0] == '[' {
-		if len(t.Type) < 2 {
-			panic("type " + t.Type + " not supported")
-		}
-		if t.Type[1] != ']' {
-			panic("type " + t.Type + " not supported")
-		}
-		if t.Type[2] == '*' {
-			return t.Type[3:]
-		}
-		return t.Type[2:]
+	if t.Slice {
+		return uses[t.Type[2:]].Elem()
 	}
-
-	if t.Type[2] == '*' {
-		return t.Type[3:]
+	if t.Pointer {
+		return t.String()[1:]
 	}
-	return t.Type[2:]
+	return t.String()
 }
 
-type Fragment struct {
-	Cond string
-	Stmt string
-	Args []*VarType
-}
+func (t *Type) NewExpression() string {
+	if len(t.Type) > 4 && t.Type[:4] == "map[" {
+		return "make(" + t.Type + ")"
+	}
 
-type VarType struct {
-	Var  string
-	Type *Type
+	if t.Primitive != "" {
+		return t.Type
+	}
 
-	IsIn bool
+	return "new(" + t.Elem() + ")"
 }

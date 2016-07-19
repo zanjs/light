@@ -25,6 +25,8 @@ func parseGofile(file string) {
 	// ast.Print(fset, f)
 	// format.Node(os.Stdout, fset, f)
 
+	mapper.Package = f.Name.Name
+
 	for _, d := range f.Decls {
 		genDecl, ok := d.(*ast.GenDecl)
 		if !ok {
@@ -33,6 +35,7 @@ func parseGofile(file string) {
 		}
 
 		switch genDecl.Tok {
+
 		case token.IMPORT:
 			mapper.Imports = getImports(genDecl)
 
@@ -105,12 +108,12 @@ func getNameAndMethods(fset *token.FileSet, gd *ast.GenDecl) (name string, ms []
 	it, _ := ts.Type.(*ast.InterfaceType)
 
 	ms = make([]*Operation, it.Methods.NumFields())
-	for i, mapper := range it.Methods.List {
+	for i, m := range it.Methods.List {
 		var o Operation
 		ms[i] = &o
 
-		o.Doc = getComment(mapper.Doc)
-		o.Name = mapper.Names[0].Name // TODO multiple
+		o.Doc = getComment(m.Doc)
+		o.Name = m.Names[0].Name // TODO multiple
 
 		// ft, _ := mapper.Type.(*ast.FuncType)
 
@@ -142,11 +145,12 @@ func getComment(cg *ast.CommentGroup) (comment string) {
 // }
 
 func getOperationInfo(o *Operation, sig *types.Signature) {
-	o.Params = getFields(sig.Params())
-	o.Results = getFields(sig.Results())
+	o.ParamsOrder, o.Params = getFields(sig.Params())
+	o.ResultsOrder, o.Results = getFields(sig.Results())
 }
 
-func getFields(ts *types.Tuple) (fs map[string]*Type) {
+func getFields(ts *types.Tuple) (fos []*VarType, fs map[string]*Type) {
+	fos = make([]*VarType, ts.Len())
 	fs = make(map[string]*Type, ts.Len())
 	for i := 0; i < ts.Len(); i++ {
 		u := ts.At(i)
@@ -157,6 +161,7 @@ func getFields(ts *types.Tuple) (fs map[string]*Type) {
 		}
 
 		if t, ok := uses[u.Type().String()]; ok {
+			fos[i] = &VarType{v, t, false}
 			fs[v] = t
 			continue
 		}
@@ -164,6 +169,7 @@ func getFields(ts *types.Tuple) (fs map[string]*Type) {
 		t := &Type{
 			Type: u.Type().String(),
 		}
+		fos[i] = &VarType{v, t, false}
 		fs[v] = t
 
 		getOtherInfo(t, u.Type())

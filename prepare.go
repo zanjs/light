@@ -3,12 +3,14 @@ package main
 import (
 	"regexp"
 	"strings"
-
-	"github.com/wothing/log"
 )
 
 func prepareData() {
+	mapper.Name += "Impl"
+
 	for _, m := range mapper.Methods {
+		m.Tx = mapper.Tx
+
 		m.OpType = getOpType(m)
 
 		checkResults(m)
@@ -31,16 +33,21 @@ func calcFragment(m *Operation) {
 
 	var last int
 	for _, a := range matched {
-		stmt := m.Doc[last:a[0]]
+		stmt := strings.TrimSpace(m.Doc[last:a[0]])
 		if stmt != "" {
 			m.Fragments = append(m.Fragments, calcArgs(m, stmt))
 		}
-		m.Fragments = append(m.Fragments, calcArgs(m, m.Doc[a[0]:a[1]]))
-
+		stmt = strings.TrimSpace(m.Doc[a[0]:a[1]])
+		if stmt != "" {
+			m.Fragments = append(m.Fragments, calcArgs(m, stmt))
+		}
 		last = a[1]
 	}
 	if last != len(m.Doc) {
-		m.Fragments = append(m.Fragments, calcArgs(m, m.Doc[last:]))
+		stmt := strings.TrimSpace(m.Doc[last:])
+		if stmt != "" {
+			m.Fragments = append(m.Fragments, calcArgs(m, stmt))
+		}
 	}
 }
 
@@ -68,42 +75,39 @@ func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 	}
 
 	matched := variable.FindAllStringIndex(fragment.Stmt, -1)
+	stmt = fragment.Stmt
 	for _, a := range matched {
-
-		f := fragment.Stmt[a[0]:a[1]]
-		log.Debug(f)
-		f = strings.TrimSpace(f[2 : len(f)-1])
-		log.Debug(f)
+		s := fragment.Stmt[a[0]:a[1]]
+		f := strings.TrimSpace(s[2 : len(s)-1])
+		// log.Debug(f)
 
 		ss := strings.Split(f, ".")
 		t, ok := m.Params[ss[0]]
 		if !ok {
 			panic("variable ⟦" + ss[0] + "⟧ not in parameters for " + m.Name)
 		}
-		if len(ss) == 1 {
-			var isIn bool
-			for _, s := range ins {
-				if s == f {
-					isIn = true
-					break
-				}
-			}
-			fragment.Args = append(fragment.Args, &VarType{f, t, isIn})
-		} else {
+		if len(ss) != 1 {
 			p, ok := t.Fields[ss[1]]
 			if !ok {
 				panic("variable ⟦" + f + "⟧ not in parameters for " + m.Name)
 			}
-			var isIn bool
-			for _, s := range ins {
-				if s == f {
-					isIn = true
-					break
-				}
-			}
-			fragment.Args = append(fragment.Args, &VarType{f, p, isIn})
+			t = p
 		}
+
+		var isIn bool
+		for _, s := range ins {
+			if s == f {
+				isIn = true
+				break
+			}
+		}
+		if !isIn {
+			stmt = strings.Replace(stmt, s, "%s", -1)
+		}
+
+		fragment.Args = append(fragment.Args, &VarType{f, t, isIn})
 	}
+	fragment.Stmt = stmt
 
 	return
 }
@@ -144,13 +148,13 @@ func calcDest(m *Operation) {
 		f = strings.Replace(f, " ", "", -1)
 
 		if m.OpType == "insert" {
-			for _, t := range m.Params {
+			for v, t := range m.Params {
 				if t.Name == "Tx" {
 					continue
 				}
 
 				if p, ok := t.Fields[f]; ok {
-					m.Dest = append(m.Dest, &VarType{f, p, false})
+					m.Dest = append(m.Dest, &VarType{v + "." + f, p, false})
 				} else {
 					panic("returning field ⟦" + s + "⟧ not matched struct property")
 				}
@@ -160,16 +164,28 @@ func calcDest(m *Operation) {
 				if v == "err" {
 					continue
 				}
+				if t.Name == "Tx" {
+					m.Tx = v
+					continue
+				}
 
 				if f == "Count" || f == "Sum" {
-					m.Dest = append(m.Dest, &VarType{s, t, false})
+					m.Dest = append(m.Dest, &VarType{v, t, false})
 					break
 				}
 
-				if p, ok := t.Fields[f]; ok {
-					m.Dest = append(m.Dest, &VarType{f, p, false})
-				} else {
-					panic("select field ⟦" + s + "⟧ not matched struct property")
+				if m.OpType == "get" {
+					if p, ok := t.Fields[f]; ok {
+						m.Dest = append(m.Dest, &VarType{v + "." + f, p, false})
+					} else {
+						panic("select field ⟦" + s + "⟧ not matched struct property")
+					}
+				} else if m.OpType == "list" {
+					if p, ok := t.Fields[f]; ok {
+						m.Dest = append(m.Dest, &VarType{"x." + f, p, false})
+					} else {
+						panic("select field ⟦" + s + "⟧ not matched struct property")
+					}
 				}
 			}
 		}
@@ -185,6 +201,16 @@ func checkResults(m *Operation) {
 	} else {
 		if len(m.Results) != 2 {
 			panic(m.Name + " method must has two returns only")
+		}
+	}
+
+	if m.OpType == "get" || m.OpType == "list" {
+		for _, vt := range m.ResultsOrder {
+			if vt.Var == "err" {
+				continue
+			}
+
+			m.Return = vt
 		}
 	}
 }

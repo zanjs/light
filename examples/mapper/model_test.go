@@ -9,7 +9,8 @@ import (
 	e "github.com/arstd/gobatis/examples/enums"
 )
 
-var x ModelImplExample
+// var x ModelImplExample
+var x ModelMapperImpl
 var id int
 
 func TestModelMapperInsert(t *testing.T) {
@@ -48,7 +49,7 @@ func TestModelMapperInsert(t *testing.T) {
 	}
 
 	id = m.Id
-	log.JSON(m)
+	log.Infof("id=%d", m.Id)
 }
 
 func TestModelMapperUpdate(t *testing.T) {
@@ -67,7 +68,7 @@ func TestModelMapperUpdate(t *testing.T) {
 		BuildinInt64:   2,
 		BuildinInt8:    2,
 		BuildinRune:    '个',
-		BuildinString:  "text",
+		BuildinString:  "update",
 		BuildinUint:    2,
 		BuildinUint16:  2,
 		BuildinUint32:  2,
@@ -87,7 +88,7 @@ func TestModelMapperUpdate(t *testing.T) {
 		t.Fatalf("add error: %s", err)
 	}
 
-	log.JSON(a)
+	log.Infof("affected=%d", a)
 }
 
 func TestModelMapperGet(t *testing.T) {
@@ -100,7 +101,7 @@ func TestModelMapperGet(t *testing.T) {
 		t.Fatalf("add error: %s", err)
 	}
 
-	log.JSON(m)
+	log.Info(m)
 }
 
 func TestModelMapperDelete(t *testing.T) {
@@ -131,23 +132,6 @@ func TestModelMapperCount(t *testing.T) {
 	}
 
 	log.JSON(count)
-}
-
-func TestModelMapperSum(t *testing.T) {
-	m := &m.Model{
-		BuildinBool: true,
-		EnumStatus:  e.StatusNormal,
-	}
-	tx, err := BeginTx()
-	defer RollbackTx(tx)
-	sum, err := x.Sum(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted})
-	CommitTx(tx)
-
-	if err != nil {
-		t.Fatalf("list(%+v) error: %s", m, err)
-	}
-
-	log.JSON(sum)
 }
 
 func TestModelMapperSelect(t *testing.T) {

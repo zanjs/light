@@ -56,7 +56,7 @@ type ModelMapper interface {
 	// select count(*)
 	// from models
 	// where buildin_bool=${m.BuildinBool}
-	//   [?{m.BuildinInt != false} and buildin_int=${m.BuildinInt} ]
+	//   [?{m.BuildinInt != 0} and buildin_int=${m.BuildinInt} ]
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	Count(tx *sql.Tx, m *domain.Model, ss []e.Status) (int64, error)
 
@@ -67,7 +67,7 @@ type ModelMapper interface {
 	//   ptr_model
 	// from models
 	// where buildin_bool=${m.BuildinBool}
-	//   [?{m.BuildinInt != false} and buildin_int=${m.BuildinInt} ]
+	//   [?{m.BuildinInt != 0} and buildin_int=${m.BuildinInt} ]
 	//   [?{len(ss) != 0} and enum_status in (${ss}) ]
 	// order by id
 	// offset ${offset} limit ${limit}
