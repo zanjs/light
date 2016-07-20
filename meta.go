@@ -129,13 +129,13 @@ func (t *Type) Elem() string {
 }
 
 func (t *Type) NewExpression() string {
-	if len(t.Type) > 4 && t.Type[:4] == "map[" {
-		return "make(" + t.Type + ")"
-	}
-
 	if t.Primitive != "" {
 		return t.Type
 	}
 
-	return "new(" + t.Elem() + ")"
+	if len(t.Type) > 4 && t.Type[:4] == "map[" {
+		return t.Type + "{}"
+	}
+
+	return "&" + t.Elem() + "{}"
 }

@@ -42,12 +42,11 @@ func TestModelMapperInsert(t *testing.T) {
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
 	err = x.Insert(tx, m)
-	CommitTx(tx)
-
 	if err != nil {
 		t.Fatalf("add error: %s", err)
 	}
 
+	CommitTx(tx)
 	id = m.Id
 	log.Infof("id=%d", m.Id)
 }
@@ -82,12 +81,11 @@ func TestModelMapperUpdate(t *testing.T) {
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
 	a, err := x.Update(tx, m)
-	CommitTx(tx)
-
 	if err != nil {
 		t.Fatalf("add error: %s", err)
 	}
 
+	CommitTx(tx)
 	log.Infof("affected=%d", a)
 }
 
@@ -95,13 +93,44 @@ func TestModelMapperGet(t *testing.T) {
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
 	m, err := x.Get(tx, id)
-	CommitTx(tx)
-
 	if err != nil {
 		t.Fatalf("add error: %s", err)
 	}
 
-	log.Info(m)
+	CommitTx(tx)
+	log.JSONIndent(m)
+}
+
+func TestModelMapperCount(t *testing.T) {
+	m := &m.Model{
+		BuildinBool: true,
+		EnumStatus:  e.StatusNormal,
+	}
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	count, err := x.Count(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted})
+	if err != nil {
+		t.Fatalf("count(%+v) error: %s", m, err)
+	}
+
+	CommitTx(tx)
+	log.JSON(count)
+}
+
+func TestModelMapperSelect(t *testing.T) {
+	m := &m.Model{
+		BuildinBool: true,
+		EnumStatus:  e.StatusNormal,
+	}
+	tx, err := BeginTx()
+	defer RollbackTx(tx)
+	ms, err := x.List(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted}, 0, 20)
+	if err != nil {
+		t.Fatalf("list(%+v) error: %s", m, err)
+	}
+
+	CommitTx(tx)
+	log.JSONIndent(ms)
 }
 
 func TestModelMapperDelete(t *testing.T) {
@@ -115,38 +144,4 @@ func TestModelMapperDelete(t *testing.T) {
 	}
 
 	log.JSON(a)
-}
-
-func TestModelMapperCount(t *testing.T) {
-	m := &m.Model{
-		BuildinBool: true,
-		EnumStatus:  e.StatusNormal,
-	}
-	tx, err := BeginTx()
-	defer RollbackTx(tx)
-	count, err := x.Count(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted})
-	CommitTx(tx)
-
-	if err != nil {
-		t.Fatalf("list(%+v) error: %s", m, err)
-	}
-
-	log.JSON(count)
-}
-
-func TestModelMapperSelect(t *testing.T) {
-	m := &m.Model{
-		BuildinBool: true,
-		EnumStatus:  e.StatusNormal,
-	}
-	tx, err := BeginTx()
-	defer RollbackTx(tx)
-	mts, err := x.List(tx, m, []e.Status{e.StatusNormal, e.StatusDeleted}, 1, 9999)
-	CommitTx(tx)
-
-	if err != nil {
-		t.Fatalf("list(%+v) error: %s", m, err)
-	}
-
-	log.JSON(mts)
 }

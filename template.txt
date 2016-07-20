@@ -27,7 +27,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 		stmt = `{{.Stmt}} `
 		{{- range .Args}}
 			{{- if .IsIn}}
-				stmt = strings.Replace(stmt, "(%s)",
+				stmt = strings.Replace(stmt, "${"+"{{.Var}}"+"}",
 					strings.Repeat(",%s", len({{.Var}}))[1:], -1)
 				for _, s := range {{.Var}} {
 					args = append(args, int32(s))
@@ -122,7 +122,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 	{{- else if eq .OpType "get"}}
 		var dest []interface{}
 		{{- if not .Return.Type.Primitive}}
-			{{.Return.Var}} = &{{.Return.Type.Elem}}{}
+			{{.Return.Var}} = {{.Return.Type.NewExpression}}
 		{{- end}}
 		{{- range .Dest}}
 			{{- if .Type.Primitive}}
@@ -142,7 +142,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 		{{- range .Dest}}
 			{{- if not .Type.Primitive}}
 				{{.Var}} = {{.Type.NewExpression}}
-				err = json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+				err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
 				if err != nil {
 					log.Error(err)
 					return
@@ -161,8 +161,8 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 
 		var data {{.Return.Type}}
 		for rows.Next() {
-			x := {{.Return.Type.Elem}}{}
-			data = append(data, &x)
+			x := {{.Return.Type.NewExpression}}
+			data = append(data, x)
 
 			var dest []interface{}
 			{{- range .Dest}}
@@ -181,7 +181,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 			{{- range .Dest}}
 				{{- if not .Type.Primitive}}
 					{{.Var}} = {{.Type.NewExpression}}
-					err = json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+					err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
 					if err != nil {
 						log.Error(err)
 						return

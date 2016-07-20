@@ -227,14 +227,14 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (m *domain.Model, err error) {
 		log.Error(args...)
 		return
 	}
-	m.BuildinMap = &map[string]interface{}{}
-	err = json.Unmarshal(x_m_BuildinMap, m.BuildinMap)
+	m.BuildinMap = map[string]interface{}{}
+	err = json.Unmarshal(x_m_BuildinMap, &m.BuildinMap)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	m.PtrModel = &domain.Model{}
-	err = json.Unmarshal(x_m_PtrModel, m.PtrModel)
+	err = json.Unmarshal(x_m_PtrModel, &m.PtrModel)
 	if err != nil {
 		log.Error(err)
 		return
@@ -259,7 +259,7 @@ func (*ModelMapperImpl) Count(tx *sql.Tx, m *domain.Model, ss []e.Status) (i int
 	}
 	if len(ss) != 0 {
 		stmt = `and enum_status in (${ss})  `
-		stmt = strings.Replace(stmt, "(%s)",
+		stmt = strings.Replace(stmt, "${"+"ss"+"}",
 			strings.Repeat(",%s", len(ss))[1:], -1)
 		for _, s := range ss {
 			args = append(args, int32(s))
@@ -306,7 +306,7 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 	}
 	if len(ss) != 0 {
 		stmt = `and enum_status in (${ss})  `
-		stmt = strings.Replace(stmt, "(%s)",
+		stmt = strings.Replace(stmt, "${"+"ss"+"}",
 			strings.Repeat(",%s", len(ss))[1:], -1)
 		for _, s := range ss {
 			args = append(args, int32(s))
@@ -338,8 +338,8 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 
 	var data []*domain.Model
 	for rows.Next() {
-		x := domain.Model{}
-		data = append(data, &x)
+		x := &domain.Model{}
+		data = append(data, x)
 
 		var dest []interface{}
 		dest = append(dest, &x.Id)
@@ -370,13 +370,13 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 			return nil, err
 		}
 		x.BuildinMap = map[string]interface{}{}
-		err = json.Unmarshal(x_x_BuildinMap, x.BuildinMap)
+		err = json.Unmarshal(x_x_BuildinMap, &x.BuildinMap)
 		if err != nil {
 			log.Error(err)
 			return
 		}
-		x.PtrModel = domain.Model{}
-		err = json.Unmarshal(x_x_PtrModel, x.PtrModel)
+		x.PtrModel = &domain.Model{}
+		err = json.Unmarshal(x_x_PtrModel, &x.PtrModel)
 		if err != nil {
 			log.Error(err)
 			return
