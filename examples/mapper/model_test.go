@@ -37,7 +37,9 @@ func TestCreateTable(t *testing.T) {
 			buildin_map     jsonb,
 			enum_status smallint,
 			ptr_model   jsonb,
-			time timestamptz
+			time timestamptz,
+			slice     jsonb,
+			struct_slice jsonb
 		)
 	`)
 	if err != nil {
@@ -75,6 +77,10 @@ func TestModelMapperInsert(t *testing.T) {
 		EnumStatus: e.StatusNormal,
 		PtrModel:   &m.Model{BuildinString: "text"},
 		Time:       time.Now(),
+		Slice:      []string{"a", "b"},
+		StructSlice: []*m.Model{
+			{BuildinString: "text"},
+		},
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
@@ -115,6 +121,10 @@ func TestModelMapperUpdate(t *testing.T) {
 		EnumStatus: e.StatusNormal,
 		PtrModel:   &m.Model{BuildinString: "text"},
 		Time:       time.Now(),
+		Slice:      []string{"a", "b"},
+		StructSlice: []*m.Model{
+			{BuildinString: "text"},
+		},
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)

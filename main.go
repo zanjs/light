@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -10,13 +12,21 @@ import (
 	"github.com/wothing/log"
 )
 
+var (
+	db   = flag.String("db", "db", "variable of prefix Query/QueryRow/Exec")
+	path = flag.String("path", "", "path variable db")
+)
+
 func main() {
+	flag.Parse()
+
+	log.SetLevel(log.Lwarn)
 	log.SetFormat("2006-01-02 15:04:05.999 info examples/main.go:88 message")
 
 	gofile := os.Getenv("GOFILE")
 	pwd, err := os.Getwd()
 	checkError(err)
-	log.Infof("Found go file: %s/%s\n", pwd, gofile)
+	fmt.Printf("Found go file: %s/%s\n", pwd, gofile)
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
 
@@ -41,10 +51,10 @@ func main() {
 	log.Infof("start parse go file")
 	mapper.Source = gofile
 	parseGofile(gofile)
+	// log.JSONIndent(mapper)
 
 	log.Infof("preparse data")
 	prepareData()
-
 	// log.JSONIndent(mapper)
 
 	tplName := "template.txt"
@@ -73,7 +83,7 @@ func main() {
 	err = cmd.Run()
 	checkError(err)
 
-	log.Infof("Generate file: %s/%s\n", pwd, filename)
+	fmt.Printf("Generate file: %s/%s\n", pwd, filename)
 }
 
 func checkError(err error) {

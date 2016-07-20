@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"github.com/wothing/log"
 	{{- range .Imports}}
 	{{.}}
@@ -30,12 +31,16 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				stmt = strings.Replace(stmt, "${"+"{{.Var}}"+"}",
 					strings.Repeat(",%s", len({{.Var}}))[1:], -1)
 				for _, s := range {{.Var}} {
-					args = append(args, int32(s))
+					{{- if .Type.Alias}}
+						args = append(args, {{.Type.Primitive}}(s))
+					{{- else}}
+						args = append(args, s)
+					{{- end}}
 				}
-			{{- else if .Type.Primitive}}
-				args = append(args, {{.Var}})
 			{{- else if .Type.Alias}}
-				args = append(args, {{.Primitive}}({{.Var}}))
+				args = append(args, {{.Type.Primitive}}({{.Var}}))
+			{{- else if .Type.Basic}}
+				args = append(args, {{.Var}})
 			{{- else}}
 				var {{.UnderlineVar}} []byte
 				{{.UnderlineVar}}, err = json.Marshal({{.Var}})
@@ -64,7 +69,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 		{{if .Dest}}
 			var dest []interface{}
 			{{range .Dest}}
-				{{if .Type.Primitive}}
+				{{if .Type.Basic}}
 					dest = append(dest, &{{.Var}})
 				{{else}}
 					var {{.UnderlineVar}} []byte
@@ -79,7 +84,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				return
 			}
 			{{range .Dest}}
-				{{if not .Type.Primitive}}
+				{{if not .Type.Basic}}
 					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
 					if err != nil {
 						log.Error(err)
@@ -121,11 +126,11 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 
 	{{- else if eq .OpType "get"}}
 		var dest []interface{}
-		{{- if not .Return.Type.Primitive}}
+		{{- if not .Return.Type.Basic}}
 			{{.Return.Var}} = {{.Return.Type.NewExpression}}
 		{{- end}}
 		{{- range .Dest}}
-			{{- if .Type.Primitive}}
+			{{- if .Type.Basic}}
 				dest = append(dest, &{{.Var}})
 			{{- else}}
 				var {{.UnderlineVar}} []byte
@@ -140,7 +145,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 			return
 		}
 		{{- range .Dest}}
-			{{- if not .Type.Primitive}}
+			{{- if not .Type.Basic}}
 				{{.Var}} = {{.Type.NewExpression}}
 				err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
 				if err != nil {
@@ -152,7 +157,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 		return
 
 	{{- else if eq .OpType "list"}}
-		rows, err := tx.Query(query, args...)
+		rows, err := {{.Tx}}.Query(query, args...)
 		if err != nil {
 			log.Error(err)
 			return nil, err
@@ -161,12 +166,12 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 
 		var data {{.Return.Type}}
 		for rows.Next() {
-			x := {{.Return.Type.NewExpression}}
+			x := {{.Return.Type.Elem.NewExpression}}
 			data = append(data, x)
 
 			var dest []interface{}
 			{{- range .Dest}}
-				{{- if .Type.Primitive}}
+				{{- if .Type.Basic}}
 					dest = append(dest, &{{.Var}})
 				{{- else}}
 					var {{.UnderlineVar}} []byte
@@ -179,7 +184,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				return nil, err
 			}
 			{{- range .Dest}}
-				{{- if not .Type.Primitive}}
+				{{- if not .Type.Basic}}
 					{{.Var}} = {{.Type.NewExpression}}
 					err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
 					if err != nil {

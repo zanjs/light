@@ -31,33 +31,10 @@ type Model struct {
 	// BuildinUintptr uintptr
 	BuildinMap map[string]interface{}
 
+	Time       time.Time
 	EnumStatus enums.Status
 	PtrModel   *Model
-	Time       time.Time
-}
 
-/*
-create table models (
-	id serial primary key,
-	buildin_bool bool,
-	buildin_byte smallint,
-	buildin_float32 real,
-	buildin_float64 double precision,
-	buildin_int     int8,
-	buildin_int16   smallint,
-	buildin_int32   integer,
-	buildin_int64   bigint,
-	buildin_int8    smallint,
-	buildin_rune    smallint,
-	buildin_string  text,
-	buildin_uint    bigint,
-	buildin_uint16  integer,
-	buildin_uint32  bigint,
-	buildin_uint64  bigint,
-	buildin_uint8   smallint,
-	buildin_map     jsonb,
-	enum_status smallint,
-	ptr_model   jsonb,
-	time timestamptz
-)
-*/
+	Slice       []string
+	StructSlice []*Model
+}

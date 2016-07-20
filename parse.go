@@ -238,8 +238,7 @@ func getOtherInfo(vt *Type, t types.Type) {
 			vt.Fields[f.Name()] = x
 
 			if x.Type == "time.Time" {
-				x.Primitive = x.Type
-				return
+				continue
 			}
 
 			uses[f.Type().String()] = x
@@ -271,5 +270,5 @@ func makeVarName(t string) string {
 		s = "s"
 	}
 
-	return strings.ToLower(t[i+1:i+2]) + s
+	return "x" + strings.ToLower(t[i+1:i+2]) + s
 }

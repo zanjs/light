@@ -7,11 +7,10 @@ import (
 
 var uses = map[string]*Type{}
 
-var mapper = &Mapper{Tx: "db"}
+var mapper = &Mapper{}
 
 type Mapper struct {
 	Source string
-	Tx     string
 
 	Path    string
 	Package string
@@ -89,6 +88,19 @@ type Type struct {
 	Fields map[string]*Type
 }
 
+func (t *Type) Basic() bool {
+	if t.Slice {
+		return false
+	}
+	if t.Pointer {
+		return false
+	}
+	if t.Type == "time.Time" {
+		return true
+	}
+	return t.Primitive != ""
+}
+
 func (t *Type) String() string {
 	var slice, star, pkg string
 	if t.Slice {
@@ -101,7 +113,7 @@ func (t *Type) String() string {
 		pkg = t.Package + "."
 	}
 	if t.Name == "" {
-		t.Name = t.Type
+		t.Name = t.Primitive
 	}
 	return fmt.Sprintf("%s%s%s%s", slice, star, pkg, t.Name)
 }
@@ -118,17 +130,21 @@ func (t *Type) IsSlice() bool {
 	return t.Type[0] == '['
 }
 
-func (t *Type) Elem() string {
+func (t *Type) Elem() *Type {
 	if t.Slice {
-		return uses[t.Type[2:]].Elem()
+		return uses[t.Type[2:]]
 	}
-	if t.Pointer {
-		return t.String()[1:]
-	}
-	return t.String()
+	// if t.Pointer {
+	// 	return uses[t.Type[1:]]
+	// }
+	return t
 }
 
 func (t *Type) NewExpression() string {
+	if t.Slice {
+		return t.String() + "{}"
+	}
+
 	if t.Primitive != "" {
 		return t.Type
 	}
@@ -137,5 +153,9 @@ func (t *Type) NewExpression() string {
 		return t.Type + "{}"
 	}
 
-	return "&" + t.Elem() + "{}"
+	if t.Pointer {
+		return "&" + t.Elem().String()[1:] + "{}"
+	}
+
+	return "&" + t.Elem().String() + "{}"
 }

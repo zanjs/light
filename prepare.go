@@ -3,20 +3,32 @@ package main
 import (
 	"regexp"
 	"strings"
+
+	"github.com/wothing/log"
 )
 
 func prepareData() {
 	mapper.Name += "Impl"
 
-	for _, m := range mapper.Methods {
-		m.Tx = mapper.Tx
+	if *path != "" {
+		mapper.Imports[*path] = `"`+*path+`"`
+	}
 
+	for _, m := range mapper.Methods {
+		if m.Tx == "" {
+			m.Tx = *db
+		}
+
+		log.Debug("getOpType")
 		m.OpType = getOpType(m)
 
+		log.Debug("checkResults")
 		checkResults(m)
 
+		log.Debug("calcDest")
 		calcDest(m)
 
+		log.Debug("calcFragment")
 		calcFragment(m)
 	}
 }
@@ -112,9 +124,11 @@ func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 	return
 }
 
-var parentheses = regexp.MustCompile(`\(.*?\)`)
+var parentheses = regexp.MustCompile(`\([^\(]*?\)`)
 
 func calcDest(m *Operation) {
+	log.Debug("get dest stmt")
+
 	var stmt string
 	switch m.OpType {
 	case "update", "delete":
@@ -127,29 +141,35 @@ func calcDest(m *Operation) {
 	case "get", "list":
 		var i int
 		for {
-			i = strings.Index(m.Doc, " from ")
-			if i == -1 {
+			tmp := strings.Index(m.Doc[i:], " from ")
+			if tmp == -1 {
 				panic(m.Name + " method sql keyword `from` not found")
 			}
-			if strings.Contains(m.Doc[:i], "(") == strings.Contains(m.Doc[:i], ")") {
+			i += tmp
+			if strings.Count(m.Doc[:i], "(") == strings.Count(m.Doc[:i], ")") {
 				break
 			}
+			i += len(" from ")
 		}
 		stmt = m.Doc[len("select")+1 : i]
 	}
 
 	stmt = parentheses.ReplaceAllString(stmt, "")
+	stmt = parentheses.ReplaceAllString(stmt, "")
+	stmt = parentheses.ReplaceAllString(stmt, "")
 
 	fs := strings.Split(stmt, ",")
 	for _, s := range fs {
 		s = strings.TrimSpace(s)
-		f := strings.Replace(s, "_", " ", -1)
+		f := s[strings.LastIndexAny(s, " \t")+1:]
+		f = strings.Replace(f, "_", " ", -1)
 		f = strings.Title(f)
 		f = strings.Replace(f, " ", "", -1)
 
 		if m.OpType == "insert" {
 			for v, t := range m.Params {
 				if t.Name == "Tx" {
+					m.Tx = v
 					continue
 				}
 
@@ -162,6 +182,7 @@ func calcDest(m *Operation) {
 		} else {
 			for v, t := range m.Results {
 				if v == "err" {
+					t.Primitive = "error"
 					continue
 				}
 				if t.Name == "Tx" {
