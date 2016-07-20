@@ -232,18 +232,27 @@ func getOtherInfo(vt *Type, t types.Type) {
 				continue
 			}
 
-			vt.Fields[f.Name()] = &Type{
+			x := &Type{
 				Type: f.Type().String(),
 			}
+			vt.Fields[f.Name()] = x
 
-			uses[f.Type().String()] = vt.Fields[f.Name()]
+			if x.Type == "time.Time" {
+				x.Primitive = x.Type
+				return
+			}
 
-			getOtherInfo(vt.Fields[f.Name()], f.Type())
+			uses[f.Type().String()] = x
+
+			getOtherInfo(x, f.Type())
 		}
 
 	case *types.Basic:
 		b := t.(*types.Basic)
 		vt.Primitive = b.Name()
+
+	case *types.Map:
+		// map[x]y
 
 	default:
 		log.Infof("%s %#v", t.String(), t)

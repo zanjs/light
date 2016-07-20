@@ -57,6 +57,7 @@ create table models (
 	buildin_uint8   smallint,
 	buildin_map     jsonb,
 	enum_status smallint,
-	ptr_model   jsonb
+	ptr_model   jsonb,
+	time timestamptz
 )
 */

@@ -24,7 +24,7 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 		args []interface{}
 	)
 
-	stmt = `insert into models(buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id `
+	stmt = `insert into models(buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id `
 	args = append(args, m.BuildinBool)
 	args = append(args, m.BuildinByte)
 	args = append(args, m.BuildinFloat32)
@@ -56,6 +56,7 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 		return
 	}
 	args = append(args, x_m_PtrModel)
+	args = append(args, m.Time)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -90,7 +91,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (i int64, err error)
 		args []interface{}
 	)
 
-	stmt = `update models set buildin_bool=%s, buildin_byte=%s, buildin_float32=%s, buildin_float64=%s, buildin_int=%s, buildin_int16=%s, buildin_int32=%s, buildin_int64=%s, buildin_int8=%s, buildin_rune=%s, buildin_string=%s, buildin_uint=%s, buildin_uint16=%s, buildin_uint32=%s, buildin_uint64=%s, buildin_uint8=%s, buildin_map=%s, enum_status=%s, ptr_model=%s where id=%s `
+	stmt = `update models set buildin_bool=%s, buildin_byte=%s, buildin_float32=%s, buildin_float64=%s, buildin_int=%s, buildin_int16=%s, buildin_int32=%s, buildin_int64=%s, buildin_int8=%s, buildin_rune=%s, buildin_string=%s, buildin_uint=%s, buildin_uint16=%s, buildin_uint32=%s, buildin_uint64=%s, buildin_uint8=%s, buildin_map=%s, enum_status=%s, ptr_model=%s, time=%s where id=%s `
 	args = append(args, m.BuildinBool)
 	args = append(args, m.BuildinByte)
 	args = append(args, m.BuildinFloat32)
@@ -122,6 +123,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (i int64, err error)
 		return
 	}
 	args = append(args, x_m_PtrModel)
+	args = append(args, m.Time)
 	args = append(args, m.Id)
 	buf.WriteString(stmt)
 
@@ -182,7 +184,7 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (m *domain.Model, err error) {
 		args []interface{}
 	)
 
-	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model from models where id=%s `
+	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time from models where id=%s `
 	args = append(args, id)
 	buf.WriteString(stmt)
 
@@ -220,6 +222,7 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (m *domain.Model, err error) {
 	dest = append(dest, &m.EnumStatus)
 	var x_m_PtrModel []byte
 	dest = append(dest, &x_m_PtrModel)
+	dest = append(dest, &m.Time)
 	err = db.QueryRow(query, args...).Scan(dest...)
 	if err != nil {
 		log.Error(err)
@@ -295,7 +298,7 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 		args []interface{}
 	)
 
-	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model from models where buildin_bool=%s `
+	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time from models where buildin_bool=%s `
 	args = append(args, m.BuildinBool)
 	buf.WriteString(stmt)
 
@@ -364,6 +367,7 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 		dest = append(dest, &x.EnumStatus)
 		var x_x_PtrModel []byte
 		dest = append(dest, &x_x_PtrModel)
+		dest = append(dest, &x.Time)
 		err = rows.Scan(dest...)
 		if err != nil {
 			log.Error(err)

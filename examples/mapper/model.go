@@ -17,12 +17,12 @@ type ModelMapper interface {
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
 	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
-	//   ptr_model)
+	//   ptr_model, time)
 	// values (${m.BuildinBool}, ${m.BuildinByte}, ${m.BuildinFloat32},
 	//   ${m.BuildinFloat64}, ${m.BuildinInt}, ${m.BuildinInt16}, ${m.BuildinInt32},
 	//   ${m.BuildinInt64}, ${m.BuildinInt8}, ${m.BuildinRune}, ${m.BuildinString},
 	//   ${m.BuildinUint}, ${m.BuildinUint16}, ${m.BuildinUint32}, ${m.BuildinUint64},
-	//   ${m.BuildinUint8}, ${m.BuildinMap}, ${m.EnumStatus}, ${m.PtrModel})
+	//   ${m.BuildinUint8}, ${m.BuildinMap}, ${m.EnumStatus}, ${m.PtrModel}, ${m.Time})
 	// returning id
 	Insert(tx *sql.Tx, m *domain.Model) error
 
@@ -36,7 +36,7 @@ type ModelMapper interface {
 	//   buildin_uint16=${m.BuildinUint16}, buildin_uint32=${m.BuildinUint32},
 	//   buildin_uint64=${m.BuildinUint64}, buildin_uint8=${m.BuildinUint8},
 	//   buildin_map=${m.BuildinMap}, enum_status=${m.EnumStatus},
-	//   ptr_model=${m.PtrModel}
+	//   ptr_model=${m.PtrModel}, time=${m.Time}
 	// where id=${m.Id}
 	Update(tx *sql.Tx, m *domain.Model) (int64, error)
 
@@ -48,7 +48,7 @@ type ModelMapper interface {
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
 	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
-	//   ptr_model
+	//   ptr_model, time
 	// from models
 	// where id=${id}
 	Get(tx *sql.Tx, id int) (*domain.Model, error)
@@ -64,7 +64,7 @@ type ModelMapper interface {
 	//   buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8,
 	//   buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32,
 	//   buildin_uint64, buildin_uint8, buildin_map, enum_status,
-	//   ptr_model
+	//   ptr_model, time
 	// from models
 	// where buildin_bool=${m.BuildinBool}
 	//   [?{m.BuildinInt != 0} and buildin_int=${m.BuildinInt} ]

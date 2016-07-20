@@ -2,12 +2,48 @@ package mapper
 
 import (
 	"testing"
+	"time"
 
 	"github.com/wothing/log"
 
 	m "github.com/arstd/gobatis/examples/domain"
 	e "github.com/arstd/gobatis/examples/enums"
 )
+
+func TestCreateTable(t *testing.T) {
+	_, err := db.Exec("drop table if exists models")
+	if err != nil {
+		log.Error(err)
+	}
+	_, err = db.Exec(`
+		create table models (
+			id serial primary key,
+			buildin_bool bool,
+			buildin_byte smallint,
+			buildin_float32 real,
+			buildin_float64 double precision,
+			buildin_int     int8,
+			buildin_int16   smallint,
+			buildin_int32   integer,
+			buildin_int64   bigint,
+			buildin_int8    smallint,
+			buildin_rune    smallint,
+			buildin_string  text,
+			buildin_uint    bigint,
+			buildin_uint16  integer,
+			buildin_uint32  bigint,
+			buildin_uint64  bigint,
+			buildin_uint8   smallint,
+			buildin_map     jsonb,
+			enum_status smallint,
+			ptr_model   jsonb,
+			time timestamptz
+		)
+	`)
+	if err != nil {
+		log.Error(err)
+	}
+}
 
 // var x ModelImplExample
 var x ModelMapperImpl
@@ -38,6 +74,7 @@ func TestModelMapperInsert(t *testing.T) {
 		BuildinMap: map[string]interface{}{"a": 1},
 		EnumStatus: e.StatusNormal,
 		PtrModel:   &m.Model{BuildinString: "text"},
+		Time:       time.Now(),
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
@@ -77,6 +114,7 @@ func TestModelMapperUpdate(t *testing.T) {
 		BuildinMap: map[string]interface{}{"a": 1},
 		EnumStatus: e.StatusNormal,
 		PtrModel:   &m.Model{BuildinString: "text"},
+		Time:       time.Now(),
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
