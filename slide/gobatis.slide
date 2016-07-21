@@ -37,24 +37,17 @@ shangxuejin@gmail.com
 
 * 为什么要用
 
-**珍爱生命*
-
-快速编码
-=> 省时间
-
-避免思考相同的逻辑
-=> 省脑子
-
-减少编写重复代码
-=> 省手指
-
-只关心必须关心的代码，便于查看和调试
-=> 护眼睛
+- 快速编码，避免思考相同的逻辑，减少编写重复代码 => 省时间，省脑子，省手指
+- 只关心必须关心的代码，便于查看和调试
+- 标准化，生成的代码模式固定
+- 日志详细，便于排查错误
 
 
 * 怎么使用
 
-定义好数据库操作的接口和方法，并在方法上写上 SQL 语句，然后在文件中通过 go:generate 调用 gobatis，如
+- 安装 `go get github.com/arstd/gobatis`，并确保 $GOBIN 在 $PATH 中
+- 定义好数据库操作的接口和方法，并在方法上写上 SQL 语句，
+- 然后在文件中通过 go:generate 调用 gobatis，如
 
     //go:generate gobatis
 
@@ -73,28 +66,40 @@ shangxuejin@gmail.com
 
 # .code ../examples/persist/demo.go
 
-编译之前执行 `go generate ./...`，即可生成代码
+*编译之前*执行 `go generate ./...`，即可生成代码
 
 
 * 约定规则
 
 - 变量
     ${xxx}
-- 条件判断
+
+- 条件表达式
     [?{ Go表达式 } SQL表达式 ]
-    注意：[ ? { 之间不能有空格, ] 前必须有一个空格
-- in 表达式单独放在 [] 中，不能有其他参数
+    注意：[?{ 之间不能有空格, ] 前必须有一个空格
 
 
 * 注意事项
 
 - gobatis 生成的代码最好都提交到仓库中，这样即便其他人没有这个工具，也能运行
 - SQL 所有关键字都小写，方便解析，不可混用！！！
-- 语句稍加格式化，减少出错的机率，建议 select/from/join/where/and/or/order-by/offset-limit 等单独成行
+- 语句稍加格式化，减少出错的机率
+    建议 insert/values/returning/update/set/
+    select/from/join/where/and/or/order-by/offset-limit 等单独成行
+
+    select ...
+    from ...
+    join ... on ...
+    where ...
+      and ...
+      or ...
+    order by ..
+    offset ... limit ...
+
 
 * 如何实现的
 
-parser --> prepare --> render --> goimports
+parse --> prepare --> render --> goimports
 
 1. 通过解析接口文件，通过 go/parser 库解析，得到接口中方法、参数类型和注释
 2. 分析 SQL，得到 条件、变量，以及变量对应的参数类型等等数据
@@ -122,7 +127,9 @@ parser --> prepare --> render --> goimports
 
 * 扩展
 
-通过简单定义接口，生成代码的这种思路可以使用到很多地方，比如 RPC
+“通过简单定义接口或注释，生成需要的代码”
+
+这种思路可以使用到很多地方，比如 RPC
 
 
 * Q&A
