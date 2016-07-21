@@ -119,7 +119,7 @@ func (t *Type) String() string {
 }
 
 func (t *Type) Alias() bool {
-	return t.Primitive == t.Type
+	return !t.Slice && t.Primitive != "" && t.Primitive != t.Type
 }
 
 func (t *Type) IsPointer() bool {

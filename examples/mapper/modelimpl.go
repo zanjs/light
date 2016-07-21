@@ -25,22 +25,22 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 	)
 
 	stmt = `insert into models(buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time, slice, struct_slice) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id `
-	args = append(args, bool(m.BuildinBool))
-	args = append(args, byte(m.BuildinByte))
-	args = append(args, float32(m.BuildinFloat32))
-	args = append(args, float64(m.BuildinFloat64))
-	args = append(args, int(m.BuildinInt))
-	args = append(args, int16(m.BuildinInt16))
-	args = append(args, int32(m.BuildinInt32))
-	args = append(args, int64(m.BuildinInt64))
-	args = append(args, int8(m.BuildinInt8))
-	args = append(args, rune(m.BuildinRune))
-	args = append(args, string(m.BuildinString))
-	args = append(args, uint(m.BuildinUint))
-	args = append(args, uint16(m.BuildinUint16))
-	args = append(args, uint32(m.BuildinUint32))
-	args = append(args, uint64(m.BuildinUint64))
-	args = append(args, uint8(m.BuildinUint8))
+	args = append(args, m.BuildinBool)
+	args = append(args, m.BuildinByte)
+	args = append(args, m.BuildinFloat32)
+	args = append(args, m.BuildinFloat64)
+	args = append(args, m.BuildinInt)
+	args = append(args, m.BuildinInt16)
+	args = append(args, m.BuildinInt32)
+	args = append(args, m.BuildinInt64)
+	args = append(args, m.BuildinInt8)
+	args = append(args, m.BuildinRune)
+	args = append(args, m.BuildinString)
+	args = append(args, m.BuildinUint)
+	args = append(args, m.BuildinUint16)
+	args = append(args, m.BuildinUint32)
+	args = append(args, m.BuildinUint64)
+	args = append(args, m.BuildinUint8)
 	var x_m_BuildinMap []byte
 	x_m_BuildinMap, err = json.Marshal(m.BuildinMap)
 	if err != nil {
@@ -48,7 +48,7 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 		return
 	}
 	args = append(args, x_m_BuildinMap)
-	args = append(args, m.EnumStatus)
+	args = append(args, int32(m.EnumStatus))
 	var x_m_PtrModel []byte
 	x_m_PtrModel, err = json.Marshal(m.PtrModel)
 	if err != nil {
@@ -106,22 +106,22 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 	)
 
 	stmt = `update models set buildin_bool=%s, buildin_byte=%s, buildin_float32=%s, buildin_float64=%s, buildin_int=%s, buildin_int16=%s, buildin_int32=%s, buildin_int64=%s, buildin_int8=%s, buildin_rune=%s, buildin_string=%s, buildin_uint=%s, buildin_uint16=%s, buildin_uint32=%s, buildin_uint64=%s, buildin_uint8=%s, buildin_map=%s, enum_status=%s, ptr_model=%s, time=%s, slice=%s, struct_slice=%s where id=%s `
-	args = append(args, bool(m.BuildinBool))
-	args = append(args, byte(m.BuildinByte))
-	args = append(args, float32(m.BuildinFloat32))
-	args = append(args, float64(m.BuildinFloat64))
-	args = append(args, int(m.BuildinInt))
-	args = append(args, int16(m.BuildinInt16))
-	args = append(args, int32(m.BuildinInt32))
-	args = append(args, int64(m.BuildinInt64))
-	args = append(args, int8(m.BuildinInt8))
-	args = append(args, rune(m.BuildinRune))
-	args = append(args, string(m.BuildinString))
-	args = append(args, uint(m.BuildinUint))
-	args = append(args, uint16(m.BuildinUint16))
-	args = append(args, uint32(m.BuildinUint32))
-	args = append(args, uint64(m.BuildinUint64))
-	args = append(args, uint8(m.BuildinUint8))
+	args = append(args, m.BuildinBool)
+	args = append(args, m.BuildinByte)
+	args = append(args, m.BuildinFloat32)
+	args = append(args, m.BuildinFloat64)
+	args = append(args, m.BuildinInt)
+	args = append(args, m.BuildinInt16)
+	args = append(args, m.BuildinInt32)
+	args = append(args, m.BuildinInt64)
+	args = append(args, m.BuildinInt8)
+	args = append(args, m.BuildinRune)
+	args = append(args, m.BuildinString)
+	args = append(args, m.BuildinUint)
+	args = append(args, m.BuildinUint16)
+	args = append(args, m.BuildinUint32)
+	args = append(args, m.BuildinUint64)
+	args = append(args, m.BuildinUint8)
 	var x_m_BuildinMap []byte
 	x_m_BuildinMap, err = json.Marshal(m.BuildinMap)
 	if err != nil {
@@ -129,7 +129,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 		return
 	}
 	args = append(args, x_m_BuildinMap)
-	args = append(args, m.EnumStatus)
+	args = append(args, int32(m.EnumStatus))
 	var x_m_PtrModel []byte
 	x_m_PtrModel, err = json.Marshal(m.PtrModel)
 	if err != nil {
@@ -152,7 +152,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 		return
 	}
 	args = append(args, x_m_StructSlice)
-	args = append(args, int(m.Id))
+	args = append(args, m.Id)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -183,7 +183,7 @@ func (*ModelMapperImpl) Delete(tx *sql.Tx, id int) (xi int64, err error) {
 	)
 
 	stmt = `delete from models where id=%s `
-	args = append(args, int(id))
+	args = append(args, id)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -213,7 +213,7 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 	)
 
 	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time, slice, struct_slice from models where id=%s `
-	args = append(args, int(id))
+	args = append(args, id)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -296,12 +296,12 @@ func (*ModelMapperImpl) Count(tx *sql.Tx, m *domain.Model, ss []e.Status) (xi in
 	)
 
 	stmt = `select count(*) from models where buildin_bool=%s `
-	args = append(args, bool(m.BuildinBool))
+	args = append(args, m.BuildinBool)
 	buf.WriteString(stmt)
 
 	if m.BuildinInt != 0 {
 		stmt = `and buildin_int=%s  `
-		args = append(args, int(m.BuildinInt))
+		args = append(args, m.BuildinInt)
 		buf.WriteString(stmt)
 	}
 	if len(ss) != 0 {
@@ -343,12 +343,12 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 	)
 
 	stmt = `select id, buildin_bool, buildin_byte, buildin_float32, buildin_float64, buildin_int, buildin_int16, buildin_int32, buildin_int64, buildin_int8, buildin_rune, buildin_string, buildin_uint, buildin_uint16, buildin_uint32, buildin_uint64, buildin_uint8, buildin_map, enum_status, ptr_model, time, slice, struct_slice from models where buildin_bool=%s `
-	args = append(args, bool(m.BuildinBool))
+	args = append(args, m.BuildinBool)
 	buf.WriteString(stmt)
 
 	if m.BuildinInt != 0 {
 		stmt = `and buildin_int=%s  `
-		args = append(args, int(m.BuildinInt))
+		args = append(args, m.BuildinInt)
 		buf.WriteString(stmt)
 	}
 	if len(ss) != 0 {
@@ -362,8 +362,8 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 	}
 
 	stmt = `order by id offset %s limit %s `
-	args = append(args, int(offset))
-	args = append(args, int(limit))
+	args = append(args, offset)
+	args = append(args, limit)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
