@@ -45,9 +45,9 @@ type ModelMapper interface {
 
     `go generate ./...`
 
-更多示例见： [examples/mapper/demo.go](examples/mapper/demo.go)
+更多示例见： [examples/mapper/model.go](examples/mapper/model.go)
 
-生成的文件： [examples/mapper/demoimpl.go](examples/mapper/demoimpl.go)
+生成的文件： [examples/mapper/modelimpl.go](examples/mapper/modelimpl.go)
 
 
 更多参数
