@@ -223,6 +223,8 @@ func getOtherInfo(vt *Type, t types.Type) {
 		for i := 0; i < s.NumFields(); i++ {
 			f := s.Field(i)
 
+			log.Debug(i, f.Name())
+
 			if v, ok := uses[f.Type().String()]; ok {
 				// 避免 json 打印时 递归
 				x := *v

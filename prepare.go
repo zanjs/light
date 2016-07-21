@@ -96,12 +96,12 @@ func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 		ss := strings.Split(f, ".")
 		t, ok := m.Params[ss[0]]
 		if !ok {
-			panic("variable ⟦" + ss[0] + "⟧ not in parameters for " + m.Name)
+			panic("variable `" + ss[0] + "` not in parameters for " + m.Name)
 		}
 		if len(ss) != 1 {
 			p, ok := t.Fields[ss[1]]
 			if !ok {
-				panic("variable ⟦" + f + "⟧ not in parameters for " + m.Name)
+				panic("variable `" + f + "` not in parameters for " + m.Name)
 			}
 			t = p
 		}
@@ -176,7 +176,7 @@ func calcDest(m *Operation) {
 				if p, ok := t.Fields[f]; ok {
 					m.Dest = append(m.Dest, &VarType{v + "." + f, p, false})
 				} else {
-					panic("returning field ⟦" + s + "⟧ not matched struct property")
+					panic("returning field `" + s + "` not matched struct property")
 				}
 			}
 		} else {
@@ -195,17 +195,22 @@ func calcDest(m *Operation) {
 					break
 				}
 
+				if s == "photo_status" {
+					log.Debug(f)
+					log.JSONIndent(t)
+				}
+
 				if m.OpType == "get" {
 					if p, ok := t.Fields[f]; ok {
 						m.Dest = append(m.Dest, &VarType{v + "." + f, p, false})
 					} else {
-						panic("select field ⟦" + s + "⟧ not matched struct property")
+						panic("select field `" + s + "` not matched struct property for " + m.Name)
 					}
 				} else if m.OpType == "list" {
 					if p, ok := t.Fields[f]; ok {
 						m.Dest = append(m.Dest, &VarType{"x." + f, p, false})
 					} else {
-						panic("select field ⟦" + s + "⟧ not matched struct property")
+						panic("select field `" + s + "` not matched struct property for " + m.Name)
 					}
 				}
 			}
