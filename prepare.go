@@ -33,7 +33,7 @@ func prepareData() {
 	}
 }
 
-var brackets = regexp.MustCompile(`\[.+?\]`)
+var brackets = regexp.MustCompile(`\[.+? \]`)
 
 func calcFragment(m *Operation) {
 	matched := brackets.FindAllStringIndex(m.Doc, -1)
