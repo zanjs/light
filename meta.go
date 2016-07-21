@@ -72,7 +72,7 @@ type VarType struct {
 }
 
 func (vt *VarType) UnderlineVar() string {
-	return "x_" + strings.Replace(vt.Var, ".", "_", -1)
+	return "x" + strings.Replace(vt.Var, ".", "_", -1)
 }
 
 type Type struct {

@@ -11,7 +11,7 @@ func prepareData() {
 	mapper.Name += "Impl"
 
 	if *path != "" {
-		mapper.Imports[*path] = `"`+*path+`"`
+		mapper.Imports[*path] = `"` + *path + `"`
 	}
 
 	for _, m := range mapper.Methods {
@@ -239,7 +239,14 @@ func checkResults(m *Operation) {
 func getOpType(m *Operation) string {
 	op := m.Doc[:strings.IndexAny(m.Doc, " \t")]
 	switch op {
-	case "insert", "update", "delete":
+	case "insert":
+		i := strings.LastIndex(m.Doc, " returning ")
+		if i == -1 {
+			return "update"
+		}
+		return op
+
+	case "update", "delete":
 		return op
 
 	case "select":
