@@ -41,36 +41,36 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 	args = append(args, m.BuildinUint32)
 	args = append(args, m.BuildinUint64)
 	args = append(args, m.BuildinUint8)
-	var x_m_BuildinMap []byte
-	x_m_BuildinMap, err = json.Marshal(m.BuildinMap)
+	var xm_BuildinMap []byte
+	xm_BuildinMap, err = json.Marshal(m.BuildinMap)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_BuildinMap)
+	args = append(args, xm_BuildinMap)
 	args = append(args, int32(m.EnumStatus))
-	var x_m_PtrModel []byte
-	x_m_PtrModel, err = json.Marshal(m.PtrModel)
+	var xm_PtrModel []byte
+	xm_PtrModel, err = json.Marshal(m.PtrModel)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_PtrModel)
+	args = append(args, xm_PtrModel)
 	args = append(args, m.Time)
-	var x_m_Slice []byte
-	x_m_Slice, err = json.Marshal(m.Slice)
+	var xm_Slice []byte
+	xm_Slice, err = json.Marshal(m.Slice)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_Slice)
-	var x_m_StructSlice []byte
-	x_m_StructSlice, err = json.Marshal(m.StructSlice)
+	args = append(args, xm_Slice)
+	var xm_StructSlice []byte
+	xm_StructSlice, err = json.Marshal(m.StructSlice)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_StructSlice)
+	args = append(args, xm_StructSlice)
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -122,36 +122,36 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 	args = append(args, m.BuildinUint32)
 	args = append(args, m.BuildinUint64)
 	args = append(args, m.BuildinUint8)
-	var x_m_BuildinMap []byte
-	x_m_BuildinMap, err = json.Marshal(m.BuildinMap)
+	var xm_BuildinMap []byte
+	xm_BuildinMap, err = json.Marshal(m.BuildinMap)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_BuildinMap)
+	args = append(args, xm_BuildinMap)
 	args = append(args, int32(m.EnumStatus))
-	var x_m_PtrModel []byte
-	x_m_PtrModel, err = json.Marshal(m.PtrModel)
+	var xm_PtrModel []byte
+	xm_PtrModel, err = json.Marshal(m.PtrModel)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_PtrModel)
+	args = append(args, xm_PtrModel)
 	args = append(args, m.Time)
-	var x_m_Slice []byte
-	x_m_Slice, err = json.Marshal(m.Slice)
+	var xm_Slice []byte
+	xm_Slice, err = json.Marshal(m.Slice)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_Slice)
-	var x_m_StructSlice []byte
-	x_m_StructSlice, err = json.Marshal(m.StructSlice)
+	args = append(args, xm_Slice)
+	var xm_StructSlice []byte
+	xm_StructSlice, err = json.Marshal(m.StructSlice)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	args = append(args, x_m_StructSlice)
+	args = append(args, xm_StructSlice)
 	args = append(args, m.Id)
 	buf.WriteString(stmt)
 
@@ -245,16 +245,16 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 	dest = append(dest, &xm.BuildinUint32)
 	dest = append(dest, &xm.BuildinUint64)
 	dest = append(dest, &xm.BuildinUint8)
-	var x_xm_BuildinMap []byte
-	dest = append(dest, &x_xm_BuildinMap)
+	var xxm_BuildinMap []byte
+	dest = append(dest, &xxm_BuildinMap)
 	dest = append(dest, &xm.EnumStatus)
-	var x_xm_PtrModel []byte
-	dest = append(dest, &x_xm_PtrModel)
+	var xxm_PtrModel []byte
+	dest = append(dest, &xxm_PtrModel)
 	dest = append(dest, &xm.Time)
-	var x_xm_Slice []byte
-	dest = append(dest, &x_xm_Slice)
-	var x_xm_StructSlice []byte
-	dest = append(dest, &x_xm_StructSlice)
+	var xxm_Slice []byte
+	dest = append(dest, &xxm_Slice)
+	var xxm_StructSlice []byte
+	dest = append(dest, &xxm_StructSlice)
 	err = db.QueryRow(query, args...).Scan(dest...)
 	if err != nil {
 		log.Error(err)
@@ -263,25 +263,25 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 		return
 	}
 	xm.BuildinMap = map[string]interface{}{}
-	err = json.Unmarshal(x_xm_BuildinMap, &xm.BuildinMap)
+	err = json.Unmarshal(xxm_BuildinMap, &xm.BuildinMap)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	xm.PtrModel = &domain.Model{}
-	err = json.Unmarshal(x_xm_PtrModel, &xm.PtrModel)
+	err = json.Unmarshal(xxm_PtrModel, &xm.PtrModel)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	xm.Slice = []string{}
-	err = json.Unmarshal(x_xm_Slice, &xm.Slice)
+	err = json.Unmarshal(xxm_Slice, &xm.Slice)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	xm.StructSlice = []*domain.Model{}
-	err = json.Unmarshal(x_xm_StructSlice, &xm.StructSlice)
+	err = json.Unmarshal(xxm_StructSlice, &xm.StructSlice)
 	if err != nil {
 		log.Error(err)
 		return
@@ -406,41 +406,41 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []e.Status, offset 
 		dest = append(dest, &x.BuildinUint32)
 		dest = append(dest, &x.BuildinUint64)
 		dest = append(dest, &x.BuildinUint8)
-		var x_x_BuildinMap []byte
-		dest = append(dest, &x_x_BuildinMap)
+		var xx_BuildinMap []byte
+		dest = append(dest, &xx_BuildinMap)
 		dest = append(dest, &x.EnumStatus)
-		var x_x_PtrModel []byte
-		dest = append(dest, &x_x_PtrModel)
+		var xx_PtrModel []byte
+		dest = append(dest, &xx_PtrModel)
 		dest = append(dest, &x.Time)
-		var x_x_Slice []byte
-		dest = append(dest, &x_x_Slice)
-		var x_x_StructSlice []byte
-		dest = append(dest, &x_x_StructSlice)
+		var xx_Slice []byte
+		dest = append(dest, &xx_Slice)
+		var xx_StructSlice []byte
+		dest = append(dest, &xx_StructSlice)
 		err = rows.Scan(dest...)
 		if err != nil {
 			log.Error(err)
 			return nil, err
 		}
 		x.BuildinMap = map[string]interface{}{}
-		err = json.Unmarshal(x_x_BuildinMap, &x.BuildinMap)
+		err = json.Unmarshal(xx_BuildinMap, &x.BuildinMap)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		x.PtrModel = &domain.Model{}
-		err = json.Unmarshal(x_x_PtrModel, &x.PtrModel)
+		err = json.Unmarshal(xx_PtrModel, &x.PtrModel)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		x.Slice = []string{}
-		err = json.Unmarshal(x_x_Slice, &x.Slice)
+		err = json.Unmarshal(xx_Slice, &x.Slice)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		x.StructSlice = []*domain.Model{}
-		err = json.Unmarshal(x_x_StructSlice, &x.StructSlice)
+		err = json.Unmarshal(xx_StructSlice, &x.StructSlice)
 		if err != nil {
 			log.Error(err)
 			return

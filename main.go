@@ -7,23 +7,34 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"text/template"
 
 	"github.com/wothing/log"
 )
 
 var (
-	db   = flag.String("db", "db", "variable of prefix Query/QueryRow/Exec")
-	path = flag.String("path", "", "path variable db")
+	db      = flag.String("db", "db", "variable of prefix Query/QueryRow/Exec")
+	path    = flag.String("path", "", "path variable db")
+	version = flag.Bool("v", false, "version")
 )
 
 func main() {
 	flag.Parse()
 
+	if *version {
+		fmt.Println("gobatis v0.2.0")
+	}
+
 	log.SetLevel(log.Lwarn)
 	log.SetFormat("2006-01-02 15:04:05.999 info examples/main.go:88 message")
 
 	gofile := os.Getenv("GOFILE")
+	if gofile == "" || !strings.HasSuffix(gofile, ".go") {
+		fmt.Println("used by go:generate only")
+		return
+	}
+
 	pwd, err := os.Getwd()
 	checkError(err)
 	fmt.Printf("Found go file: %s/%s\n", pwd, gofile)
