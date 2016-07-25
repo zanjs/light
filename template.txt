@@ -16,7 +16,7 @@ import (
 type {{.Name}} struct{}
 
 {{- range .Methods }}
-func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
+func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 	var (
 		stmt string
 		buf  bytes.Buffer
@@ -31,24 +31,24 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				stmt = strings.Replace(stmt, "${"+"{{.Var}}"+"}",
 					strings.Repeat(",%s", len({{.Var}}))[1:], -1)
 				for _, s := range {{.Var}} {
-					{{- if .Type.Alias}}
-						args = append(args, {{.Type.Primitive}}(s))
+					{{- if .Type.AliasFor}}
+						args = append(args, {{.Type.AliasFor}}(s))
 					{{- else}}
 						args = append(args, s)
 					{{- end}}
 				}
-			{{- else if .Type.Alias}}
-				args = append(args, {{.Type.Primitive}}({{.Var}}))
-			{{- else if .Type.Basic}}
+			{{- else if .Type.AliasFor}}
+				args = append(args, {{.Type.AliasFor}}({{.Var}}))
+			{{- else if not .Type.IsComplex}}
 				args = append(args, {{.Var}})
 			{{- else}}
-				var {{.UnderlineVar}} []byte
-				{{.UnderlineVar}}, err = json.Marshal({{.Var}})
+				var {{.AnotherVar}} []byte
+				{{.AnotherVar}}, err = json.Marshal({{.Var}})
 				if err != nil {
 					log.Error(err)
 					return
 				}
-				args = append(args, {{.UnderlineVar}})
+				args = append(args, {{.AnotherVar}})
 			{{- end}}
 		{{- end}}
 		buf.WriteString(stmt)
@@ -69,10 +69,10 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 		{{if .Dest}}
 			var dest []interface{}
 			{{range .Dest}}
-				{{if .Type.Basic}}
+				{{if not .Type.IsComplex}}
 					dest = append(dest, &{{.Var}})
 				{{else}}
-					var {{.UnderlineVar}} []byte
+					var {{.AnotherVar}} []byte
 					dest = append(dest, &{{.Var}})
 				{{end}}
 			{{end}}
@@ -84,8 +84,8 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				return
 			}
 			{{range .Dest}}
-				{{if not .Type.Basic}}
-					err := json.Unmarshal({{.UnderlineVar}}, {{.Var}})
+				{{if .Type.IsComplex}}
+					err = json.Unmarshal({{.AnotherVar}}, {{.AddrExpr}})
 					if err != nil {
 						log.Error(err)
 						return
@@ -126,15 +126,15 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 
 	{{- else if eq .OpType "get"}}
 		var dest []interface{}
-		{{- if not .Return.Type.Basic}}
-			{{.Return.Var}} = {{.Return.Type.NewExpression}}
+		{{- if .Return.Type.IsComplex}}
+			{{.Return.Var}} = {{.Return.Type.MakeExpr}}
 		{{- end}}
 		{{- range .Dest}}
-			{{- if .Type.Basic}}
-				dest = append(dest, &{{.Var}})
+			{{- if not .Type.IsComplex}}
+				dest = append(dest, {{.AddrExpr}})
 			{{- else}}
-				var {{.UnderlineVar}} []byte
-				dest = append(dest, &{{.UnderlineVar}})
+				var {{.AnotherVar}} []byte
+				dest = append(dest, &{{.AnotherVar}})
 			{{- end}}
 		{{- end}}
 		err = {{.Tx}}.QueryRow(query, args...).Scan(dest...)
@@ -145,9 +145,9 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 			return
 		}
 		{{- range .Dest}}
-			{{- if not .Type.Basic}}
-				{{.Var}} = {{.Type.NewExpression}}
-				err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
+			{{- if .Type.IsComplex}}
+				{{.Var}} = {{.Type.MakeExpr}}
+				err = json.Unmarshal({{.AnotherVar}}, {{.AddrExpr}})
 				if err != nil {
 					log.Error(err)
 					return
@@ -166,16 +166,16 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 
 		var data {{.Return.Type}}
 		for rows.Next() {
-			x := {{.Return.Type.Elem.NewExpression}}
+			x := {{.Return.Type.Elem.MakeExpr}}
 			data = append(data, x)
 
 			var dest []interface{}
 			{{- range .Dest}}
-				{{- if .Type.Basic}}
+				{{- if not .Type.IsComplex}}
 					dest = append(dest, &{{.Var}})
 				{{- else}}
-					var {{.UnderlineVar}} []byte
-					dest = append(dest, &{{.UnderlineVar}})
+					var {{.AnotherVar}} []byte
+					dest = append(dest, &{{.AnotherVar}})
 				{{- end}}
 			{{- end}}
 			err = rows.Scan(dest...)
@@ -184,9 +184,9 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsString}})({{.ResultsString}}) {
 				return nil, err
 			}
 			{{- range .Dest}}
-				{{- if not .Type.Basic}}
-					{{.Var}} = {{.Type.NewExpression}}
-					err = json.Unmarshal({{.UnderlineVar}}, &{{.Var}})
+				{{- if .Type.IsComplex}}
+					{{.Var}} = {{.Type.MakeExpr}}
+					err = json.Unmarshal({{.AnotherVar}}, {{.AddrExpr}})
 					if err != nil {
 						log.Error(err)
 						return

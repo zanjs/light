@@ -3,7 +3,7 @@ gobatis
 
 根据接口和 SQL 生成数据库 CRUD 实现方法
 
-文档 [slide/gobatis.slide](slide/gobatis.slide)（暂时未更新）
+文档 [docs/gobatis.slide](docs/gobatis.slide)（暂时未更新）
 
 支持 6 种操作
 --------------------------------------------------------------------------------

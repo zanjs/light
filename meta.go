@@ -42,20 +42,20 @@ type Operation struct {
 	Return *VarType
 }
 
-func (m *Operation) ParamsString() string {
-	return paramsString(m.ParamsOrder, m.Params)
+func (m *Operation) ParamsExpr() string {
+	return paramsExpr(m.ParamsOrder, m.Params)
 }
 
-func (m *Operation) ResultsString() string {
-	return paramsString(m.ResultsOrder, m.Results)
+func (m *Operation) ResultsExpr() string {
+	return paramsExpr(m.ResultsOrder, m.Results)
 }
 
-func paramsString(pos []*VarType, ps map[string]*Type) string {
+func paramsExpr(pos []*VarType, ps map[string]*Type) string {
 	var slice []string
 	for _, vt := range pos {
 		slice = append(slice, vt.Var+" "+ps[vt.Var].String())
 	}
-	return strings.Join(slice, ",")
+	return strings.Join(slice, ", ")
 }
 
 type Fragment struct {
@@ -71,10 +71,25 @@ type VarType struct {
 	IsIn bool
 }
 
-func (vt *VarType) UnderlineVar() string {
+// String 声明表达式，如 s *a.Bc
+func (vt *VarType) String() string {
+	return vt.Var + " " + vt.Type.String()
+}
+
+// AddrExpr 取该变量的地址，如 &s
+func (vt *VarType) AddrExpr() string {
+	if !vt.Type.Slice && vt.Type.Pointer {
+		return vt.Var
+	}
+	return "&" + vt.Var // primitive/struct/map/slice
+}
+
+// AnotherVar 声明另一个变量，如 xa_Bc, err := json.Marshal(a.Bc)
+func (vt *VarType) AnotherVar() string {
 	return "x" + strings.Replace(vt.Var, ".", "_", -1)
 }
 
+// Type 类型详细描述，如果是 struct 结构，列出其属性
 type Type struct {
 	Type string
 
@@ -88,19 +103,7 @@ type Type struct {
 	Fields map[string]*Type
 }
 
-func (t *Type) Basic() bool {
-	if t.Slice {
-		return false
-	}
-	if t.Pointer {
-		return false
-	}
-	if t.Type == "time.Time" {
-		return true
-	}
-	return t.Primitive != ""
-}
-
+// String 声明表达式，如 var s []*a.Bc
 func (t *Type) String() string {
 	var slice, star, pkg string
 	if t.Slice {
@@ -118,44 +121,66 @@ func (t *Type) String() string {
 	return fmt.Sprintf("%s%s%s%s", slice, star, pkg, t.Name)
 }
 
-func (t *Type) Alias() bool {
-	return !t.Slice && t.Primitive != "" && t.Primitive != t.Type
+// MakeExpr 创建表达式，如 s = []*a.Bc{}
+func (t *Type) MakeExpr() string {
+	// map 特殊处理
+	if len(t.Type) >= 3 && t.Type[:3] == "map" {
+		return "map[string]interface{}{}"
+	}
+
+	var slice, star, pkg string
+	if t.Slice {
+		slice = "[]"
+		if t.Pointer {
+			star = "*"
+		}
+	} else if t.Pointer {
+		star = "&"
+	}
+	if t.Package != "" {
+		pkg = t.Package + "."
+	}
+	if t.Name == "" {
+		t.Name = t.Primitive
+	}
+	return fmt.Sprintf("%s%s%s%s{}", slice, star, pkg, t.Name)
 }
 
-func (t *Type) IsPointer() bool {
-	return t.Type[0] == '*'
+// MakeExpr 是否是复杂类型（SQL 不支持的类型，需要转换）
+func (t *Type) IsComplex() bool {
+	// map 特殊处理
+	if len(t.Type) >= 3 && t.Type[:3] == "map" {
+		return true
+	}
+
+	if t.Slice {
+		return true
+	}
+	if t.Pointer {
+		return true
+	}
+	if len(t.Type) >= 3 && t.Type[:3] == "map" {
+		return true
+	}
+	if t.Type == "time.Time" {
+		return false
+	}
+	return t.Primitive == ""
 }
 
-func (t *Type) IsSlice() bool {
-	return t.Type[0] == '['
+// AliasFor 其他类型的别名，type Status int8
+func (t *Type) AliasFor() string {
+	if t.IsComplex() {
+		return ""
+	}
+
+	return t.Primitive
 }
 
+// Elem 数组元素的类型
 func (t *Type) Elem() *Type {
 	if t.Slice {
 		return uses[t.Type[2:]]
 	}
-	// if t.Pointer {
-	// 	return uses[t.Type[1:]]
-	// }
 	return t
-}
-
-func (t *Type) NewExpression() string {
-	if t.Slice {
-		return t.String() + "{}"
-	}
-
-	if t.Primitive != "" {
-		return t.Type
-	}
-
-	if len(t.Type) > 4 && t.Type[:4] == "map[" {
-		return t.Type + "{}"
-	}
-
-	if t.Pointer {
-		return "&" + t.Elem().String()[1:] + "{}"
-	}
-
-	return "&" + t.Elem().String() + "{}"
 }
