@@ -174,7 +174,11 @@ func (t *Type) AliasFor() string {
 		return ""
 	}
 
-	return t.Primitive
+	if t.Primitive != t.Type {
+		return t.Primitive
+	}
+
+	return ""
 }
 
 // Elem 数组元素的类型

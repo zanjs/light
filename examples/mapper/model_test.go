@@ -146,7 +146,7 @@ func TestModelMapperGet(t *testing.T) {
 	}
 
 	CommitTx(tx)
-	log.JSONIndent(m)
+	log.JSON(m)
 }
 
 func TestModelMapperCount(t *testing.T) {
@@ -178,7 +178,7 @@ func TestModelMapperSelect(t *testing.T) {
 	}
 
 	CommitTx(tx)
-	log.JSONIndent(ms)
+	log.JSON(ms)
 }
 
 func TestModelMapperDelete(t *testing.T) {

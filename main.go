@@ -16,6 +16,7 @@ import (
 var (
 	db      = flag.String("db", "db", "variable of prefix Query/QueryRow/Exec")
 	path    = flag.String("path", "", "path variable db")
+	force   = flag.Bool("force", false, "force to regenerate even if impl  file newer than go file")
 	version = flag.Bool("v", false, "version")
 )
 
@@ -26,7 +27,7 @@ func main() {
 		fmt.Println("gobatis v0.2.3")
 	}
 
-	log.SetLevel(log.Lwarn)
+	// log.SetLevel(log.Lwarn)
 	log.SetFormat("2006-01-02 15:04:05.999 info examples/main.go:88 message")
 
 	gofile := os.Getenv("GOFILE")
@@ -41,19 +42,21 @@ func main() {
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
 
-	// Check modified time, if generated file newer than source file, skip!
-	gofi, err := os.Stat(pwd + "/" + gofile)
-	checkError(err)
+	if !*force {
+		// Check modified time, if generated file newer than source file, skip!
+		gofi, err := os.Stat(pwd + "/" + gofile)
+		checkError(err)
 
-	fi, err := os.Stat(filename)
-	if err != nil {
-		if _, ok := err.(*os.PathError); !ok {
-			panic(err)
-		}
-	} else {
-		if gofi.ModTime().Before(fi.ModTime()) {
-			fmt.Printf("Generate file: %s/%s, skip!\n", pwd, filename)
-			return
+		fi, err := os.Stat(filename)
+		if err != nil {
+			if _, ok := err.(*os.PathError); !ok {
+				panic(err)
+			}
+		} else {
+			if gofi.ModTime().Before(fi.ModTime()) {
+				fmt.Printf("Generate file: %s/%s, skip!\n", pwd, filename)
+				return
+			}
 		}
 	}
 
@@ -73,7 +76,7 @@ func main() {
 
 	log.Infof("preparse data")
 	prepareData()
-	// log.JSONIndent(mapper)
+	log.JSONIndent(mapper)
 
 	tplName := "template.txt"
 	tpl, err := Asset(tplName)
