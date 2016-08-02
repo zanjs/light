@@ -125,7 +125,7 @@ func (t *Type) String() string {
 func (t *Type) MakeExpr() string {
 	// map 特殊处理
 	if len(t.Type) >= 3 && t.Type[:3] == "map" {
-		return "map[string]interface{}{}"
+		return t.Type + "{}"
 	}
 
 	var slice, star, pkg string
