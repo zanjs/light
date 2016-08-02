@@ -190,6 +190,11 @@ func getOtherInfo(vt *Type, t types.Type) {
 		vt.Slice = true
 		getOtherInfo(vt, s.Elem())
 
+		t := *vt
+		t.Slice = false
+		t.Type = vt.Type[2:]
+		uses[t.Type] = &t
+
 	case *types.Pointer:
 		p := t.(*types.Pointer)
 		vt.Pointer = true
