@@ -36,6 +36,10 @@ func prepareData() {
 var brackets = regexp.MustCompile(`\[.+? \]`)
 
 func calcFragment(m *Operation) {
+	if strings.Count(m.Doc, "[") != strings.Count(m.Doc, "]") {
+		panic("brackets `[` and `]` not matched")
+	}
+
 	matched := brackets.FindAllStringIndex(m.Doc, -1)
 
 	if len(matched) == 0 {
@@ -65,7 +69,7 @@ func calcFragment(m *Operation) {
 
 var braces = regexp.MustCompile(`\?\{.+?\}`)
 var variable = regexp.MustCompile(`\$\{.+?\}`)
-var in = regexp.MustCompile(`in\s+\(\s*\$\{(.+?)\}\s*\)`)
+var in = regexp.MustCompile(`[\[\(]\s*\$\{(.+?)\}\s*[\]\)]`)
 
 func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 	fragment = &Fragment{}

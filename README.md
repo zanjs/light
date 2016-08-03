@@ -3,7 +3,7 @@ gobatis
 
 根据接口和 SQL 生成数据库 CRUD 实现方法
 
-文档 [docs/gobatis.slide](docs/gobatis.slide)（暂时未更新）
+文档 [doc/gobatis.slide](doc/gobatis.slide)（暂时未更新）
 
 支持 6 种操作
 --------------------------------------------------------------------------------
@@ -45,21 +45,24 @@ type ModelMapper interface {
 
     `go generate ./...`
 
-更多示例见： [examples/mapper/model.go](examples/mapper/model.go)
+更多示例见： [example/mapper/model.go](example/mapper/model.go)
 
-生成的文件： [examples/mapper/modelimpl.go](examples/mapper/modelimpl.go)
+生成的文件： [example/mapper/modelimpl.go](example/mapper/modelimpl.go)
 
 
 更多参数
 --------------------------------------------------------------------------------
 
-```sh
+```
 gobatis -h
 Usage of gobatis:
   -db string
-    	variable to Query/QueryRow/Exec (default "db")
+    	variable of prefix Query/QueryRow/Exec (default "db")
+  -force
+    	force to regenerate even if impl  file newer than go file
   -path string
-    	db variable path
+    	path variable db
+  -v	version
 
-//go:generate gobatis -db "db.DB" -path "github.com/wothing/17mei/db"
+//go:generate gobatis -force -db "db.DB" -path "github.com/wothing/17mei/db"
 ```

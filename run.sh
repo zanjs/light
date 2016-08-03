@@ -7,7 +7,7 @@ go-bindata template.txt
 go install
 
 # Use persist to generate code
-go generate examples/mapper/model.go
+go generate example/mapper/model.go
 
 # Test
-go test -v examples/mapper/*.go
+go test -v example/mapper/*.go

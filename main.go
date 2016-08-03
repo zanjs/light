@@ -24,10 +24,10 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("gobatis v0.2.3")
+		fmt.Println("gobatis v0.2.4")
 	}
 
-	// log.SetLevel(log.Lwarn)
+	log.SetLevel(log.Lwarn)
 	log.SetFormat("2006-01-02 15:04:05.999 info examples/main.go:88 message")
 
 	gofile := os.Getenv("GOFILE")
