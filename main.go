@@ -16,35 +16,49 @@ import (
 var (
 	db      = flag.String("db", "db", "variable of prefix Query/QueryRow/Exec")
 	path    = flag.String("path", "", "path variable db")
-	force   = flag.Bool("force", false, "force to regenerate even if impl  file newer than go file")
+	force   = flag.Bool("force", false, "not skip, force to rewrite impl file even if it newer than go file")
 	version = flag.Bool("v", false, "version")
 )
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "usage: gobatis [flags] [file.go]\n")
+	flag.PrintDefaults()
+	os.Exit(2)
+}
+
 func main() {
+	flag.Usage = usage
 	flag.Parse()
 
 	if *version {
 		fmt.Println("gobatis v0.2.4")
+		return
 	}
 
 	log.SetLevel(log.Lwarn)
 	log.SetFormat("2006-01-02 15:04:05.999 info examples/main.go:88 message")
 
 	gofile := os.Getenv("GOFILE")
-	if gofile == "" || !strings.HasSuffix(gofile, ".go") {
-		fmt.Println("used by go:generate only")
+	if gofile == "" {
+		if flag.NArg() >= 1 {
+			gofile = flag.Arg(0)
+		} else {
+			flag.Usage()
+		}
+	}
+
+	if !strings.HasSuffix(gofile, ".go") {
+		fmt.Println("file suffix must match *.go")
 		return
 	}
 
-	pwd, err := os.Getwd()
-	checkError(err)
-	fmt.Printf("Found go file: %s/%s\n", pwd, gofile)
+	fmt.Printf("Found  go file: %s\n", gofile)
 
 	filename := gofile[:len(gofile)-3] + "impl.go"
 
 	if !*force {
 		// Check modified time, if generated file newer than source file, skip!
-		gofi, err := os.Stat(pwd + "/" + gofile)
+		gofi, err := os.Stat(gofile)
 		checkError(err)
 
 		fi, err := os.Stat(filename)
@@ -54,7 +68,7 @@ func main() {
 			}
 		} else {
 			if gofi.ModTime().Before(fi.ModTime()) {
-				fmt.Printf("Generate file: %s/%s, skip!\n", pwd, filename)
+				fmt.Printf("Generated file: %s, skip!\n", filename)
 				return
 			}
 		}
@@ -64,7 +78,7 @@ func main() {
 	log.Infof("build deps using `go build -i -v`")
 	cmd := exec.Command("go", "build", "-i", "-v", "./"+gofile)
 	out, err := cmd.CombinedOutput()
-	fmt.Printf("%s", out)
+	fmt.Printf("%s", out[23:])
 	checkError(err)
 
 	os.Remove(filename)
@@ -99,10 +113,10 @@ func main() {
 	// ioutil.WriteFile(filename, pretty, 0644)
 	ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
-	fmt.Printf("Generate file: %s/%s\n", pwd, filename)
+	fmt.Printf("Generated file: %s\n", filename)
 
 	log.Infof("format and import using goimports tool")
-	cmd = exec.Command("goimports", "-w", pwd+"/"+filename)
+	cmd = exec.Command("goimports", "-w", filename)
 	out, err = cmd.CombinedOutput()
 	fmt.Printf("%s\n", out)
 	checkError(err)

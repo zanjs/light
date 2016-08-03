@@ -59,7 +59,7 @@ Usage of gobatis:
   -db string
     	variable of prefix Query/QueryRow/Exec (default "db")
   -force
-    	force to regenerate even if impl  file newer than go file
+    	not skip, force to rewrite impl file even if it newer than go file
   -path string
     	path variable db
   -v	version
