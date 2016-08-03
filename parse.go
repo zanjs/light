@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wothing/log"
+	"github.com/gotips/log"
 )
 
 func parseGofile(file string) {

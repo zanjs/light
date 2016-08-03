@@ -12,7 +12,7 @@ import (
 
 	"github.com/arstd/gobatis/example/domain"
 	"github.com/arstd/gobatis/example/enum"
-	"github.com/wothing/log"
+	"github.com/gotips/log"
 )
 
 type ModelMapperImpl struct{}

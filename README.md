@@ -54,7 +54,7 @@ type ModelMapper interface {
 --------------------------------------------------------------------------------
 
 ```
-gobatis -h
+# gobatis -h
 Usage of gobatis:
   -db string
     	variable of prefix Query/QueryRow/Exec (default "db")

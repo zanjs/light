@@ -10,7 +10,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/wothing/log"
+	"github.com/gotips/log"
+	"golang.org/x/tools/imports"
 )
 
 var (
@@ -31,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("gobatis v0.2.4")
+		fmt.Println("gobatis v0.2.5")
 		return
 	}
 
@@ -54,34 +55,16 @@ func main() {
 
 	fmt.Printf("Found  go file: %s\n", gofile)
 
-	filename := gofile[:len(gofile)-3] + "impl.go"
+	target := gofile[:len(gofile)-3] + "impl.go"
 
-	if !*force {
-		// Check modified time, if generated file newer than source file, skip!
-		gofi, err := os.Stat(gofile)
-		checkError(err)
-
-		fi, err := os.Stat(filename)
-		if err != nil {
-			if _, ok := err.(*os.PathError); !ok {
-				panic(err)
-			}
-		} else {
-			if gofi.ModTime().Before(fi.ModTime()) {
-				fmt.Printf("Generated file: %s, skip!\n", filename)
-				return
-			}
-		}
+	if skip := checkSkip(gofile, target); skip {
+		fmt.Printf("Generated file: %s, skip!\n", target)
+		return
 	}
 
-	// !!! go/types parse lib files in $GOPATH/pkg/..., so must build deps package
-	log.Infof("build deps using `go build -i -v`")
-	cmd := exec.Command("go", "build", "-i", "-v", "./"+gofile)
-	out, err := cmd.CombinedOutput()
-	fmt.Printf("%s", out[23:])
-	checkError(err)
+	buildDeps(gofile)
 
-	os.Remove(filename)
+	os.Remove(target)
 
 	log.Infof("start parse go file")
 	mapper.Source = gofile
@@ -90,35 +73,53 @@ func main() {
 
 	log.Infof("preparse data")
 	prepareData()
-	log.JSONIndent(mapper)
+	// log.JSONIndent(mapper)
 
 	tplName := "template.txt"
 	tpl, err := Asset(tplName)
 	checkError(err)
-
 	log.Infof("parse template")
 	t, err := template.New(tplName).Parse(string(tpl))
 	checkError(err)
-
 	log.Infof("render with template")
 	var buf bytes.Buffer
 	err = t.Execute(&buf, mapper)
 	checkError(err)
 
-	// log.Infof("format source")
-	// pretty, err := format.Source(buf.Bytes())
-	// checkError(err)
+	pretty, err := imports.Process(target, buf.Bytes(), nil)
+	checkError(err)
+	err = ioutil.WriteFile(target, pretty, 0644)
+	checkError(err)
+	fmt.Printf("Generated file: %s\n", target)
+}
 
-	log.Infof("write source to file")
-	// ioutil.WriteFile(filename, pretty, 0644)
-	ioutil.WriteFile(filename, buf.Bytes(), 0644)
+func checkSkip(gofile, target string) bool {
 
-	fmt.Printf("Generated file: %s\n", filename)
+	if !*force {
+		// Check modified time, if generated file newer than source file, skip!
+		gofi, err := os.Stat(gofile)
+		checkError(err)
 
-	log.Infof("format and import using goimports tool")
-	cmd = exec.Command("goimports", "-w", filename)
-	out, err = cmd.CombinedOutput()
-	fmt.Printf("%s\n", out)
+		fi, err := os.Stat(target)
+		if err != nil {
+			if _, ok := err.(*os.PathError); !ok {
+				panic(err)
+			}
+		} else {
+			if gofi.ModTime().Before(fi.ModTime()) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func buildDeps(gofile string) {
+	// !!! go/types parse lib files in $GOPATH/pkg/..., so must build deps package
+	log.Infof("build deps using `go build -i -v`")
+	cmd := exec.Command("go", "build", "-i", "-v", "./"+gofile)
+	out, err := cmd.CombinedOutput()
+	fmt.Printf("%s", out[23:])
 	checkError(err)
 }
 
