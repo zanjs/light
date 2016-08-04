@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 	"golang.org/x/tools/imports"
 )
 

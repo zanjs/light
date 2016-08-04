@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 )
 
 func prepareData() {

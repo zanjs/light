@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 
 	m "github.com/arstd/gobatis/example/domain"
 	"github.com/arstd/gobatis/example/enum"

@@ -6,7 +6,7 @@ import (
 	// import sql driver
 	_ "github.com/lib/pq"
 
-	"github.com/gotips/log"
+	"github.com/wothing/log"
 )
 
 const url = "postgres://postgres:@127.0.0.1:5432/test?sslmode=disable"
