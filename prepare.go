@@ -69,7 +69,7 @@ func calcFragment(m *Operation) {
 
 var braces = regexp.MustCompile(`\?\{.+?\}`)
 var variable = regexp.MustCompile(`\$\{.+?\}`)
-var in = regexp.MustCompile(`[\[\(]\s*\$\{(.+?)\}\s*[\]\)]`)
+var in = regexp.MustCompile(`(?:in\s+|array)[\[\(]\s*\$\{(.+?)\}\s*[\]\)]`)
 
 func calcArgs(m *Operation, stmt string) (fragment *Fragment) {
 	fragment = &Fragment{}
