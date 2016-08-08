@@ -83,7 +83,7 @@ func templateTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "template.txt", size: 4337, mode: os.FileMode(420), modTime: time.Unix(1470218053, 0)}
+	info := bindataFileInfo{name: "template.txt", size: 4337, mode: os.FileMode(420), modTime: time.Unix(1470454849, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

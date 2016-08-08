@@ -124,7 +124,7 @@ func (t *Type) String() string {
 // MakeExpr 创建表达式，如 s = []*a.Bc{}
 func (t *Type) MakeExpr() string {
 	// map 特殊处理
-	if len(t.Type) >= 3 && t.Type[:3] == "map" {
+	if strings.HasPrefix(t.Type, "map[") {
 		return t.Type + "{}"
 	}
 
@@ -149,7 +149,7 @@ func (t *Type) MakeExpr() string {
 // MakeExpr 是否是复杂类型（SQL 不支持的类型，需要转换）
 func (t *Type) IsComplex() bool {
 	// map 特殊处理
-	if len(t.Type) >= 3 && t.Type[:3] == "map" {
+	if strings.HasPrefix(t.Type, "map[") {
 		return true
 	}
 
@@ -157,9 +157,6 @@ func (t *Type) IsComplex() bool {
 		return true
 	}
 	if t.Pointer {
-		return true
-	}
-	if len(t.Type) >= 3 && t.Type[:3] == "map" {
 		return true
 	}
 	if t.Type == "time.Time" {
