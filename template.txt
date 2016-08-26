@@ -65,8 +65,8 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 	log.Debug(query)
 	log.Debug(args...)
 
-	{{if eq .OpType "insert"}}
-		{{if .Dest}}
+	{{- if eq .OpType "insert"}}
+		{{- if .Dest}}
 			var dest []interface{}
 			{{range .Dest}}
 				{{if not .Type.IsComplex}}
@@ -93,7 +93,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 				{{end}}
 			{{end}}
 			return nil
-		{{else}}
+		{{- else}}
 			res, err := {{.Tx}}.Exec(query, args...)
 			if err != nil {
 				log.Error(err)
@@ -102,9 +102,9 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 				return 0, err
 			}
 			return res.RowsAffected()
-		{{end}}
+		{{- end}}
 
-	{{else if eq .OpType "update"}}
+	{{- else if eq .OpType "update"}}
 		res, err := {{.Tx}}.Exec(query, args...)
 		if err != nil {
 			log.Error(err)
@@ -114,7 +114,7 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 		}
 		return res.RowsAffected()
 
-	{{else if eq .OpType "delete"}}
+	{{- else if eq .OpType "delete"}}
 		res, err := {{.Tx}}.Exec(query, args...)
 		if err != nil {
 			log.Error(err)
@@ -202,4 +202,5 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 		return data, nil
 	{{- end}}
 }
-{{- end}}
+
+{{end}}
