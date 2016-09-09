@@ -1,18 +1,18 @@
-gobatis
+yan
 Generate go database sql CRUD code, Spirit from MyBatis
-Tags: gobatis, mybatis, go, generate, sql, query
+Tags: yan, mybatis, go, generate, sql, query
 18:57 18 Jun 2016
 
 Arstd
 Gopher and REPL funs
 (Retrive-Evaluate-Plan-Loop, but no Actions ^_^)
-https://github.com/arstd/gobatis
+https://github.com/arstd/yan
 @Arstd
 shangxuejin@gmail.com
 
 * 主要内容
 
-- gobatis 是什么
+- yan 是什么
 - 为什么要用
 - 怎么使用
 - 更多约定
@@ -23,9 +23,9 @@ shangxuejin@gmail.com
 - Q&A 建议和意见
 
 
-* gobatis 是什么
+* yan 是什么
 
-`gobatis` 是一个通过 SQL 语句生成 Go 语言数据库操作代码的小工具，思想来源于 MyBatis
+`yan` 是一个通过 SQL 语句生成 Go 语言数据库操作代码的小工具，思想来源于 MyBatis
 
 - 代码生成工具，辅助编码，编译运行时不依赖
 - 只是个工具，完全非侵入，可用可不用，也可以部分方法使用
@@ -45,11 +45,11 @@ shangxuejin@gmail.com
 
 * 怎么使用
 
-- 安装 `go get github.com/arstd/gobatis`，并确保 $GOBIN 在 $PATH 中
+- 安装 `go get github.com/arstd/yan`，并确保 $GOBIN 在 $PATH 中
 - 定义好数据库操作的接口和方法，并在方法上写上 SQL 语句，
-- 然后在文件中通过 go:generate 调用 gobatis，如
+- 然后在文件中通过 go:generate 调用 yan，如
 
-    //go:generate gobatis
+    //go:generate yan
 
     type DemoPersister interface {
 
@@ -81,7 +81,7 @@ shangxuejin@gmail.com
 
 * 注意事项
 
-- gobatis 生成的代码最好都提交到仓库中，这样即便其他人没有这个工具，也能运行
+- yan 生成的代码最好都提交到仓库中，这样即便其他人没有这个工具，也能运行
 - SQL 所有关键字都小写，方便解析，不可混用！！！
 - 语句稍加格式化，减少出错的机率
     建议 insert/values/returning/update/set/

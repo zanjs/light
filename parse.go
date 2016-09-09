@@ -183,12 +183,11 @@ func getOtherInfo(vt *Type, t types.Type) {
 	// log.Debugf("%#v", t)
 	// time.Sleep(100 * time.Millisecond)
 
-	switch t.(type) {
+	switch d := t.(type) {
 
 	case *types.Slice:
-		s := t.(*types.Slice)
 		vt.Slice = true
-		getOtherInfo(vt, s.Elem())
+		getOtherInfo(vt, d.Elem())
 
 		t := *vt
 		t.Slice = false
@@ -196,37 +195,34 @@ func getOtherInfo(vt *Type, t types.Type) {
 		uses[t.Type] = &t
 
 	case *types.Pointer:
-		p := t.(*types.Pointer)
 		vt.Pointer = true
-		getOtherInfo(vt, p.Elem())
+		getOtherInfo(vt, d.Elem())
 
 	case *types.Named:
-		n := t.(*types.Named)
-		if n.Obj().Pkg() != nil {
-			vt.Name = n.Obj().Name()
-			vt.Path = n.Obj().Pkg().Path()
+		if d.Obj().Pkg() != nil {
+			vt.Name = d.Obj().Name()
+			vt.Path = d.Obj().Pkg().Path()
 			if imp, ok := mapper.Imports[vt.Path]; ok {
 				if i := strings.Index(imp, " "); i != -1 {
 					vt.Package = imp[:i]
 				} else {
-					vt.Package = n.Obj().Pkg().Name()
+					vt.Package = d.Obj().Pkg().Name()
 				}
 			} else {
 				mapper.Imports[vt.Path] = `"` + vt.Path + `"`
-				vt.Package = n.Obj().Pkg().Name()
+				vt.Package = d.Obj().Pkg().Name()
 			}
 
 			if vt.Name == "Tx" || vt.Name == "Time" {
 				return
 			}
-			getOtherInfo(vt, n.Underlying())
+			getOtherInfo(vt, d.Underlying())
 		}
 
 	case *types.Struct:
-		s := t.(*types.Struct)
-		vt.Fields = make(map[string]*Type, s.NumFields())
-		for i := 0; i < s.NumFields(); i++ {
-			f := s.Field(i)
+		vt.Fields = make(map[string]*Type, d.NumFields())
+		for i := 0; i < d.NumFields(); i++ {
+			f := d.Field(i)
 
 			log.Debug(i, f.Name())
 
@@ -254,14 +250,13 @@ func getOtherInfo(vt *Type, t types.Type) {
 		}
 
 	case *types.Basic:
-		b := t.(*types.Basic)
-		vt.Primitive = b.Name()
+		vt.Primitive = d.Name()
 
 	case *types.Map:
 		// map[x]y
 
 	default:
-		log.Infof("%s %#v", t.String(), t)
+		log.Infof("%s %#v", d.String(), d)
 	}
 }
 

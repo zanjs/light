@@ -3,7 +3,7 @@ package domain
 import (
 	"time"
 
-	"github.com/arstd/gobatis/example/enum"
+	"github.com/arstd/yan/example/enum"
 )
 
 // Model 模型示例

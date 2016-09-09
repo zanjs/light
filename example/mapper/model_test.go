@@ -6,8 +6,8 @@ import (
 
 	"github.com/wothing/log"
 
-	m "github.com/arstd/gobatis/example/domain"
-	"github.com/arstd/gobatis/example/enum"
+	m "github.com/arstd/yan/example/domain"
+	"github.com/arstd/yan/example/enum"
 )
 
 func TestCreateTable(t *testing.T) {

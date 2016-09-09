@@ -22,7 +22,7 @@ var (
 )
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: gobatis [flags] [file.go]\n")
+	fmt.Fprintf(os.Stderr, "usage: yan [flags] [file.go]\n")
 	flag.PrintDefaults()
 	os.Exit(2)
 }
@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("gobatis v0.2.5")
+		fmt.Println("yan v0.2.5")
 		return
 	}
 
@@ -119,7 +119,11 @@ func buildDeps(gofile string) {
 	log.Infof("build deps using `go build -i -v`")
 	cmd := exec.Command("go", "build", "-i", "-v", "./"+gofile)
 	out, err := cmd.CombinedOutput()
-	fmt.Printf("%s", out[23:])
+	if bytes.HasSuffix(out, []byte("command-line-arguments\n")) {
+		fmt.Printf("%s", out[:len(out)-23])
+	} else {
+		fmt.Printf("%s", out)
+	}
 	checkError(err)
 }
 

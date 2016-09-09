@@ -9,5 +9,5 @@ const (
 )
 
 func (s Status) String() string {
-	return "Normal"
+	return "normal"
 }

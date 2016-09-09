@@ -2,7 +2,7 @@
 
 set -e
 
-# Install gobatis
+# Install yan
 go-bindata template.txt
 go install
 

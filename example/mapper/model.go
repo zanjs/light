@@ -3,14 +3,21 @@ package mapper
 import (
 	"database/sql"
 
-	"github.com/arstd/gobatis/example/domain"
-	"github.com/arstd/gobatis/example/enum"
+	"github.com/arstd/yan/example/domain"
+	"github.com/arstd/yan/example/enum"
+	"github.com/wothing/17mei/pb"
 )
 
-//go:generate gobatis -force
+//go:generate yan -force
 
 // ModelMapper 示例接口
 type ModelMapper interface {
+
+	// select id, tags from goods where id in (${ids})
+	ListGoodsTags(ids []string) ([]*pb.Goods, error)
+
+	// update goods set tags=${req.Tags} where id in (${req.Ids})
+	GoodsSetTags(req *pb.GoodsSetTagsReq) (int64, error)
 
 	// insert into model(name, flag, score, map, time, slice, status, pointer, struct_slice)
 	// values (${m.Name}, ${m.Flag}, ${m.Score}, ${m.Map}, ${m.Time}, ${m.Slice},

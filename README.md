@@ -1,9 +1,9 @@
-gobatis
+yan
 ================================================================================
 
 根据接口和 SQL 生成数据库 CRUD 实现方法
 
-文档 [doc/gobatis.slide](doc/gobatis.slide)（暂时未更新）
+文档 [doc/yan.slide](doc/yan.slide)（暂时未更新）
 
 支持 6 种操作
 --------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ Usage
 ```go
 package persist
 
-//go:generate gobatis
+//go:generate yan
 
 // ModelMapper 示例接口
 type ModelMapper interface {
@@ -54,8 +54,8 @@ type ModelMapper interface {
 --------------------------------------------------------------------------------
 
 ```
-# gobatis -h
-Usage of gobatis:
+# yan -h
+Usage of yan:
   -db string
     	variable of prefix Query/QueryRow/Exec (default "db")
   -force
@@ -64,5 +64,5 @@ Usage of gobatis:
     	path variable db
   -v	version
 
-//go:generate gobatis -force -db "db.DB" -path "github.com/wothing/17mei/db"
+//go:generate yan -force -db "db.DB" -path "github.com/wothing/17mei/db"
 ```
