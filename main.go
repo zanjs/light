@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("yan v0.2.5")
+		fmt.Println("yan v0.3")
 		return
 	}
 
