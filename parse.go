@@ -158,6 +158,7 @@ func getFields(ts *types.Tuple) (fos []*VarType, fs map[string]*Type) {
 	fs = make(map[string]*Type, ts.Len())
 	for i := 0; i < ts.Len(); i++ {
 		u := ts.At(i)
+		// log.Errorf("%#v", u.Type().String())
 
 		v := u.Name()
 		if v == "" {
@@ -203,7 +204,9 @@ func getOtherInfo(vt *Type, t types.Type) {
 		getOtherInfo(vt, d.Elem())
 
 	case *types.Named:
-		if d.Obj().Pkg() != nil {
+		if d.Obj().Pkg() == nil {
+			vt.Name = d.String()
+		} else {
 			vt.Name = d.Obj().Name()
 			vt.Path = d.Obj().Pkg().Path()
 			if imp, ok := mapper.Imports[vt.Path]; ok {
@@ -260,7 +263,7 @@ func getOtherInfo(vt *Type, t types.Type) {
 		// map[x]y
 
 	default:
-		log.Infof("%s %#v", d.String(), d)
+		log.Errorf("%s %#v", d.String(), d)
 	}
 }
 
