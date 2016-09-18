@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"github.com/wothing/log"
+	"github.com/lib/pq"
 	{{- range .Imports}}
 	{{.}}
 	{{- end }}
@@ -27,7 +28,9 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 		{{if .Cond }} if {{.Cond}} { {{end}}
 		stmt = `{{.Stmt}} `
 		{{- range .Args}}
-			{{- if .IsIn}}
+			{{- if eq .Type.Type "uint32"}}
+				args = append(args, time.Unix(int64({{.Var}}), 0))
+			{{- else if .IsIn}}
 				stmt = strings.Replace(stmt, "${"+"{{.Var}}"+"}",
 					strings.Repeat(",%s", len({{.Var}}))[1:], -1)
 				for _, s := range {{.Var}} {
@@ -130,7 +133,10 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 			{{.Return.Var}} = {{.Return.Type.MakeExpr}}
 		{{- end}}
 		{{- range .Dest}}
-			{{- if not .Type.IsComplex}}
+			{{- if eq .Type.Type "uint32"}}
+				var {{.AnotherVar}} pq.NullTime
+				dest = append(dest, &{{.AnotherVar}})
+			{{- else if not .Type.IsComplex}}
 				dest = append(dest, {{.AddrExpr}})
 			{{- else}}
 				var {{.AnotherVar}} []byte
@@ -145,7 +151,11 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 			return
 		}
 		{{- range .Dest}}
-			{{- if .Type.IsComplex}}
+			{{- if eq .Type.Type "uint32"}}
+				if {{.AnotherVar}}.Valid {
+					{{.Var}} = uint32({{.AnotherVar}}.Time.Unix())
+				}
+			{{- else if .Type.IsComplex}}
 				{{.Var}} = {{.Type.MakeExpr}}
 				err = json.Unmarshal({{.AnotherVar}}, {{.AddrExpr}})
 				if err != nil {
@@ -171,7 +181,10 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 
 			var dest []interface{}
 			{{- range .Dest}}
-				{{- if not .Type.IsComplex}}
+				{{- if eq .Type.Type "uint32"}}
+					var {{.AnotherVar}} pq.NullTime
+					dest = append(dest, &{{.AnotherVar}})
+				{{- else if not .Type.IsComplex}}
 					dest = append(dest, &{{.Var}})
 				{{- else}}
 					var {{.AnotherVar}} []byte
@@ -184,7 +197,11 @@ func (*{{$.Name}}) {{.Name}}({{.ParamsExpr}})({{.ResultsExpr}}) {
 				return nil, err
 			}
 			{{- range .Dest}}
-				{{- if .Type.IsComplex}}
+				{{- if eq .Type.Type "uint32"}}
+					if {{.AnotherVar}}.Valid {
+						{{.Var}} = uint32({{.AnotherVar}}.Time.Unix())
+					}
+				{{- else if .Type.IsComplex}}
 					{{.Var}} = {{.Type.MakeExpr}}
 					err = json.Unmarshal({{.AnotherVar}}, {{.AddrExpr}})
 					if err != nil {

@@ -9,115 +9,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/arstd/yan/example/domain"
 	"github.com/arstd/yan/example/enum"
-	"github.com/wothing/17mei/pb"
+	"github.com/lib/pq"
 	"github.com/wothing/log"
 )
 
 type ModelMapperImpl struct{}
-
-func (*ModelMapperImpl) ListGoodsTags(ids []string) (xgs []*pb.Goods, err error) {
-	var (
-		stmt string
-		buf  bytes.Buffer
-		args []interface{}
-	)
-
-	stmt = `select id, tags from goods where id in (${ids}) `
-	stmt = strings.Replace(stmt, "${"+"ids"+"}",
-		strings.Repeat(",%s", len(ids))[1:], -1)
-	for _, s := range ids {
-		args = append(args, s)
-	}
-	buf.WriteString(stmt)
-
-	var ph []interface{}
-	for i := range args {
-		ph = append(ph, "$"+strconv.Itoa(i+1))
-	}
-
-	query := fmt.Sprintf(buf.String(), ph...)
-
-	log.Debug(query)
-	log.Debug(args...)
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var data []*pb.Goods
-	for rows.Next() {
-		x := &pb.Goods{}
-		data = append(data, x)
-
-		var dest []interface{}
-		dest = append(dest, &x.Id)
-		var xx_Tags []byte
-		dest = append(dest, &xx_Tags)
-		err = rows.Scan(dest...)
-		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-		x.Tags = []string{}
-		err = json.Unmarshal(xx_Tags, &x.Tags)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-	}
-	if err = rows.Err(); err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func (*ModelMapperImpl) GoodsSetTags(req *pb.GoodsSetTagsReq) (xi int64, err error) {
-	var (
-		stmt string
-		buf  bytes.Buffer
-		args []interface{}
-	)
-
-	stmt = `update goods set tags=%s where id in (${req.Ids}) `
-	var xreq_Tags []byte
-	xreq_Tags, err = json.Marshal(req.Tags)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	args = append(args, xreq_Tags)
-	stmt = strings.Replace(stmt, "${"+"req.Ids"+"}",
-		strings.Repeat(",%s", len(req.Ids))[1:], -1)
-	for _, s := range req.Ids {
-		args = append(args, s)
-	}
-	buf.WriteString(stmt)
-
-	var ph []interface{}
-	for i := range args {
-		ph = append(ph, "$"+strconv.Itoa(i+1))
-	}
-
-	query := fmt.Sprintf(buf.String(), ph...)
-
-	log.Debug(query)
-	log.Debug(args...)
-	res, err := db.Exec(query, args...)
-	if err != nil {
-		log.Error(err)
-		log.Error(query)
-		log.Error(args...)
-		return 0, err
-	}
-	return res.RowsAffected()
-}
 
 func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 	var (
@@ -126,7 +26,7 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 		args []interface{}
 	)
 
-	stmt = `insert into model(name, flag, score, map, time, slice, status, pointer, struct_slice) values (%s, %s, %s, %s, %s, %s, %s, %s, %s) returning id `
+	stmt = `insert into model(name, flag, score, map, time, slice, status, pointer, struct_slice, uint32) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id `
 	args = append(args, m.Name)
 	args = append(args, m.Flag)
 	args = append(args, m.Score)
@@ -160,6 +60,7 @@ func (*ModelMapperImpl) Insert(tx *sql.Tx, m *domain.Model) (err error) {
 		return
 	}
 	args = append(args, xm_StructSlice)
+	args = append(args, time.Unix(int64(m.Uint32), 0))
 	buf.WriteString(stmt)
 
 	var ph []interface{}
@@ -193,7 +94,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 		args []interface{}
 	)
 
-	stmt = `update model set name=%s, flag=%s, score=%s, map=%s, time=%s, slice=%s, status=%s, pointer=%s, struct_slice=%s where id=%s `
+	stmt = `update model set name=%s, flag=%s, score=%s, map=%s, time=%s, slice=%s, status=%s, pointer=%s, struct_slice=%s, uint32=%s where id=%s `
 	args = append(args, m.Name)
 	args = append(args, m.Flag)
 	args = append(args, m.Score)
@@ -227,6 +128,7 @@ func (*ModelMapperImpl) Update(tx *sql.Tx, m *domain.Model) (xi int64, err error
 		return
 	}
 	args = append(args, xm_StructSlice)
+	args = append(args, time.Unix(int64(m.Uint32), 0))
 	args = append(args, m.Id)
 	buf.WriteString(stmt)
 
@@ -286,7 +188,7 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 		args []interface{}
 	)
 
-	stmt = `select id, name, flag, score, map, time, slice, status, pointer, struct_slice from model where id=%s `
+	stmt = `select id, name, flag, score, map, time, slice, status, pointer, struct_slice, uint32 from model where id=%s `
 	args = append(args, id)
 	buf.WriteString(stmt)
 
@@ -315,6 +217,8 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 	dest = append(dest, &xxm_Pointer)
 	var xxm_StructSlice []byte
 	dest = append(dest, &xxm_StructSlice)
+	var xxm_Uint32 pq.NullTime
+	dest = append(dest, &xxm_Uint32)
 	err = db.QueryRow(query, args...).Scan(dest...)
 	if err != nil {
 		log.Error(err)
@@ -345,6 +249,9 @@ func (*ModelMapperImpl) Get(tx *sql.Tx, id int) (xm *domain.Model, err error) {
 	if err != nil {
 		log.Error(err)
 		return
+	}
+	if xxm_Uint32.Valid {
+		xm.Uint32 = uint32(xxm_Uint32.Time.Unix())
 	}
 	return
 }
@@ -403,7 +310,7 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []enum.Status, offs
 		args []interface{}
 	)
 
-	stmt = `select id, name, flag, score, map, time, slice, status, pointer, struct_slice from model where name like %s `
+	stmt = `select id, name, flag, score, map, time, slice, status, pointer, struct_slice, uint32 from model where name like %s `
 	args = append(args, m.Name)
 	buf.WriteString(stmt)
 
@@ -472,6 +379,8 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []enum.Status, offs
 		dest = append(dest, &xx_Pointer)
 		var xx_StructSlice []byte
 		dest = append(dest, &xx_StructSlice)
+		var xx_Uint32 pq.NullTime
+		dest = append(dest, &xx_Uint32)
 		err = rows.Scan(dest...)
 		if err != nil {
 			log.Error(err)
@@ -500,6 +409,9 @@ func (*ModelMapperImpl) List(tx *sql.Tx, m *domain.Model, ss []enum.Status, offs
 		if err != nil {
 			log.Error(err)
 			return
+		}
+		if xx_Uint32.Valid {
+			x.Uint32 = uint32(xx_Uint32.Time.Unix())
 		}
 	}
 	if err = rows.Err(); err != nil {

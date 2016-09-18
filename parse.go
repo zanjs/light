@@ -107,10 +107,14 @@ func getNameAndMethods(fset *token.FileSet, gd *ast.GenDecl) (name string, ms []
 
 	it, _ := ts.Type.(*ast.InterfaceType)
 
-	ms = make([]*Operation, it.Methods.NumFields())
-	for i, m := range it.Methods.List {
+	ms = make([]*Operation, 0)
+	for _, m := range it.Methods.List {
+		if m.Doc == nil {
+			continue
+		}
+
 		var o Operation
-		ms[i] = &o
+		ms = append(ms, &o)
 
 		o.Doc = getComment(m.Doc)
 		o.Name = m.Names[0].Name // TODO multiple

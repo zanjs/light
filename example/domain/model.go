@@ -20,4 +20,7 @@ type Model struct {
 	Status      enum.Status
 	Pointer     *Model
 	StructSlice []*Model
+
+	// protobuf fixed32 => uint32 => timestamptz
+	Uint32 uint32
 }

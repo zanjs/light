@@ -28,7 +28,9 @@ func TestCreateTable(t *testing.T) {
 
 			status smallint not null default 0,
 			pointer jsonb not null default '{}',
-			struct_slice jsonb not null default '[]'
+			struct_slice jsonb not null default '[]',
+
+			uint32 timestamptz default current_timestamp
 		)
 	`)
 	if err != nil {
@@ -36,9 +38,8 @@ func TestCreateTable(t *testing.T) {
 	}
 }
 
-// var x ModelImplExample
-var x ModelMapperImpl
-var id int
+var x ModelMapper = &ModelMapperImpl{}
+var id int = 5
 
 func TestModelMapperInsert(t *testing.T) {
 	m := &m.Model{
@@ -55,6 +56,8 @@ func TestModelMapperInsert(t *testing.T) {
 		StructSlice: []*m.Model{
 			{Name: "StructSlice"},
 		},
+
+		Uint32: uint32(time.Now().Add(-5 * time.Minute).Unix()),
 	}
 	tx, err := BeginTx()
 	defer RollbackTx(tx)
