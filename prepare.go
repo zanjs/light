@@ -163,6 +163,12 @@ func calcDest(m *Operation) {
 	stmt = parentheses.ReplaceAllString(stmt, "")
 
 	fs := strings.Split(stmt, ",")
+
+	if m.OpType != "insert" && len(fs) == 1 && !m.ResultsOrder[0].Type.IsComplex() {
+		m.Dest = append(m.Dest, &VarType{m.ResultsOrder[0].Var, m.ResultsOrder[0].Type, false})
+		return
+	}
+
 	for _, s := range fs {
 		s = strings.TrimSpace(s)
 		f := s[strings.LastIndexAny(s, " \t")+1:]
@@ -192,11 +198,6 @@ func calcDest(m *Operation) {
 				if t.Name == "Tx" {
 					m.Tx = v
 					continue
-				}
-
-				if f == "Count" || f == "Sum" {
-					m.Dest = append(m.Dest, &VarType{v, t, false})
-					break
 				}
 
 				if s == "photo_status" {
