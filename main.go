@@ -94,7 +94,6 @@ func main() {
 }
 
 func checkSkip(gofile, target string) bool {
-	fmt.Println(gofile, target)
 	if *force {
 		return false
 	}
