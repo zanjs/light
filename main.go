@@ -94,22 +94,20 @@ func main() {
 }
 
 func checkSkip(gofile, target string) bool {
+	fmt.Println(gofile, target)
+	if *force {
+		return false
+	}
 
-	if !*force {
-		// Check modified time, if generated file newer than source file, skip!
-		gofi, err := os.Stat(gofile)
-		checkError(err)
+	// Check modified time, if generated file newer than source file, skip!
+	gs, err := os.Stat(gofile)
+	checkError(err)
 
-		fi, err := os.Stat(target)
-		if err != nil {
-			if _, ok := err.(*os.PathError); !ok {
-				panic(err)
-			}
-		} else {
-			if gofi.ModTime().Before(fi.ModTime()) {
-				return true
-			}
-		}
+	ts, err := os.Stat(target)
+	checkError(err)
+
+	if !ts.ModTime().Before(gs.ModTime()) {
+		return true
 	}
 	return false
 }
