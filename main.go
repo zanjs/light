@@ -103,7 +103,9 @@ func checkSkip(gofile, target string) bool {
 	checkError(err)
 
 	ts, err := os.Stat(target)
-	checkError(err)
+	if err != nil {
+		return false
+	}
 
 	if !ts.ModTime().Before(gs.ModTime()) {
 		return true
