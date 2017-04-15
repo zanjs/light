@@ -53,12 +53,12 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Found  go file: %s\n", gofile)
+	fmt.Printf("Found source file %s.\n", gofile)
 
 	target := gofile[:len(gofile)-3] + "impl.go"
 
 	if skip := checkSkip(gofile, target); skip {
-		fmt.Printf("Generated file: %s, skip!\n", target)
+		fmt.Printf("Skip!\n")
 		return
 	}
 
@@ -90,7 +90,7 @@ func main() {
 	checkError(err)
 	err = ioutil.WriteFile(target, pretty, 0644)
 	checkError(err)
-	fmt.Printf("Generated file: %s\n", target)
+	fmt.Printf("Generate implementation file %s.\n", target)
 }
 
 func checkSkip(gofile, target string) bool {
